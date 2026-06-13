@@ -13,7 +13,7 @@
   --border:    #d8dce6;
   --border2:   #c4c9d8;
   --accent:    #1a5f9e;
-  --accent2:   #134982;
+  --accent2:    #134982;
   --accent-lt: #e8f0fb;
   --accent-dk: #124278;
   --ok:        #1a8a50;
@@ -111,18 +111,23 @@ main{flex:1;overflow:hidden;display:flex;flex-direction:column}
 .tbl-header{padding:10px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
 .tbl-header h3{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
 .tbl-scroll{overflow-x:auto;max-height:400px;overflow-y:auto}
-table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{background:var(--surface3);color:var(--text3);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:8px 8px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:2}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+thead th{background:var(--surface3);color:var(--text3);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:8px 8px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:sticky;top:0;z-index:2}
 tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 tbody tr:hover{background:var(--accent-lt)}
 tbody tr.row-error{background:#fff5f5;border-left:3px solid var(--danger)}
 tbody tr.row-warn{background:#fffbf0;border-left:3px solid #f0b429}
-tbody td{padding:0;vertical-align:middle}
-tbody td input,tbody td select{border:none;border-radius:0;background:transparent;padding:5px 7px;font-size:12px;width:100%;height:100%;min-width:60px}
+tbody td{padding:0;vertical-align:middle;overflow:hidden}
+tbody td input,tbody td select{border:none;border-radius:0;background:transparent;padding:5px 7px;font-size:12px;width:100%;height:100%;min-width:0;box-sizing:border-box;word-break:break-word}
 tbody td input:focus,tbody td select:focus{background:var(--accent-lt);box-shadow:inset 0 0 0 1.5px var(--accent);border-radius:3px;position:relative;z-index:1}
 td.computed{background:var(--ok-lt);color:var(--ok);font-family:var(--mono);font-size:11px;padding:5px 7px;white-space:nowrap;font-weight:700}
 td.computed.bad{background:var(--danger-lt);color:var(--danger)}
-td.td-act{text-align:center;padding:3px 5px;width:30px}
+td.td-act{text-align:center;padding:3px 5px;width:30px;flex-shrink:0}
+/* Prevent numeric/date inputs from collapsing on small screens */
+tbody td input[type="number"]{min-width:55px}
+tbody td input[type="date"]{min-width:120px}
+tbody td input[type="text"]{min-width:80px;word-break:break-all}
+tbody td select{min-width:60px}
 .btn-add-row{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1.5px dashed var(--border2);color:var(--text2);padding:8px 14px;cursor:pointer;font-size:12px;width:100%;border-radius:0 0 7px 7px;transition:all .15s;font-weight:600}
 .btn-add-row:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-lt)}
 .err-banner{background:var(--danger-lt);border:1.5px solid #f5b7b1;border-radius:6px;padding:9px 14px;font-size:12px;color:var(--danger);margin-bottom:12px;display:none}
@@ -254,14 +259,14 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <!-- LOGIN FORM -->
     <div id="loginFormSection">
       <div class="field">
-        <label>Usuario</label>
+        <label for="loginUserSel">Usuario</label>
         <select id="loginUserSel" onchange="onLoginUserChange()">
           <option value="">— Seleccionar usuario —</option>
         </select>
         <span class="hint" id="loginRoleHint"></span>
       </div>
       <div class="field">
-        <label>Contraseña</label>
+        <label for="loginPwd">Contraseña</label>
         <input id="loginPwd" type="password" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
         <span class="error-msg" id="loginErr"></span>
       </div>
@@ -320,7 +325,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     </div>
 
     <div class="field">
-      <label>URL del Web App</label>
+      <label for="sheetsUrlInput">URL del Web App</label>
       <input type="url" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:11px;font-family:var(--mono)">
       <span class="hint">URL actual: <span id="sheetsUrlCurrent" style="font-family:var(--mono);color:var(--ok)"></span></span>
     </div>
@@ -354,21 +359,21 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <button class="modal-close" onclick="closeModal('newHoleModal')">✕</button>
     <h2>📋 Nuevo Sondaje</h2>
     <div class="field">
-      <label>Número de Sondaje <span class="req">*</span></label>
+      <label for="nh_id">Número de Sondaje <span class="req">*</span></label>
       <input id="nh_id" type="text" placeholder="BAY-26-DH-0061">
       <span class="error-msg" id="nhErr"></span>
     </div>
     <div class="field">
-      <label>Proyecto</label>
+      <label for="nh_proj">Proyecto</label>
       <select id="nh_proj"></select>
     </div>
     <div class="fgrid fgrid-2" style="gap:10px">
       <div class="field">
-        <label>Tipo Sondaje</label>
+        <label for="nh_tipo">Tipo Sondaje</label>
         <select id="nh_tipo"></select>
       </div>
       <div class="field">
-        <label>Diámetro</label>
+        <label for="nh_diam">Diámetro</label>
         <select id="nh_diam"></select>
       </div>
     </div>
@@ -509,48 +514,48 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <div class="card-title">📋 Datos Generales del Sondaje</div>
     <div class="fgrid fgrid-4">
       <div class="field">
-        <label>Proyecto <span class="req">*</span></label>
+        <label for="h_project">Proyecto <span class="req">*</span></label>
         <select id="h_project" onchange="syncBadge()"></select>
       </div>
       <div class="field sp2">
-        <label>Número de Sondaje <span class="req">*</span></label>
+        <label for="h_holenum">Número de Sondaje <span class="req">*</span></label>
         <input type="text" id="h_holenum" placeholder="BAY-26-DH-0060" oninput="syncBadge()" readonly style="background:var(--surface3);color:var(--accent);font-weight:700;font-family:var(--mono)">
         <span class="hint">Asignado automáticamente al crear el sondaje</span>
       </div>
       <div class="field">
-        <label>Fase</label>
+        <label for="h_fase">Fase</label>
         <select id="h_fase"></select>
       </div>
       <div class="field">
-        <label>Tipo de Sondaje</label>
+        <label for="h_tipo">Tipo de Sondaje</label>
         <select id="h_tipo"></select>
       </div>
       <div class="field">
-        <label>Diámetro</label>
+        <label for="h_diam">Diámetro</label>
         <select id="h_diam"></select>
       </div>
       <div class="field">
-        <label>Ubicación</label>
+        <label for="h_ubic">Ubicación</label>
         <select id="h_ubic"></select>
       </div>
       <div class="field">
-        <label>Plataforma</label>
+        <label for="h_plat">Plataforma</label>
         <input type="text" id="h_plat" placeholder="M48-134">
       </div>
       <div class="field">
-        <label>Azimuth (°)</label>
+        <label for="h_az">Azimuth (°)</label>
         <select id="h_az"></select>
       </div>
       <div class="field">
-        <label>Dip (°)</label>
+        <label for="h_dip">Dip (°)</label>
         <select id="h_dip"></select>
       </div>
       <div class="field">
-        <label>Profundidad Final (m)</label>
+        <label for="h_prof">Profundidad Final (m)</label>
         <input type="number" id="h_prof" step="0.01" placeholder="45.8" oninput="updateDepthBars()">
       </div>
       <div class="field">
-        <label>Is Completed</label>
+        <label for="h_completed">Is Completed</label>
         <select id="h_completed"><option value="Y">Sí (Y)</option><option value="N" selected>No (N)</option></select>
       </div>
     </div>
@@ -560,23 +565,23 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <div class="card-title">👤 Personal</div>
     <div class="fgrid fgrid-4">
       <div class="field">
-        <label>Geólogo</label>
+        <label for="h_geologo">Geólogo</label>
         <select id="h_geologo"></select>
       </div>
       <div class="field">
-        <label>Técnico Geología</label>
+        <label for="h_tec">Técnico Geología</label>
         <select id="h_tec"></select>
       </div>
       <div class="field">
-        <label>Cliente</label>
+        <label for="h_cliente">Cliente</label>
         <select id="h_cliente"></select>
       </div>
       <div class="field">
-        <label>Compañía</label>
+        <label for="h_cia">Compañía</label>
         <select id="h_cia"></select>
       </div>
       <div class="field">
-        <label>Empresa Perforación</label>
+        <label for="h_epf">Empresa Perforación</label>
         <select id="h_epf"></select>
       </div>
     </div>
@@ -586,19 +591,19 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <div class="card-title">📅 Fechas</div>
     <div class="fgrid fgrid-4">
       <div class="field">
-        <label>Fecha Inicio <span class="req">*</span></label>
+        <label for="h_inicio">Fecha Inicio <span class="req">*</span></label>
         <input type="date" id="h_inicio">
       </div>
       <div class="field">
-        <label>Fecha Fin</label>
+        <label for="h_fin">Fecha Fin</label>
         <input type="date" id="h_fin">
       </div>
       <div class="field">
-        <label>Fecha de Ingreso</label>
+        <label for="h_fing">Fecha de Ingreso</label>
         <input type="date" id="h_fing">
       </div>
       <div class="field">
-        <label>Número de Cajas</label>
+        <label for="h_cajas">Número de Cajas</label>
         <input type="number" id="h_cajas" min="0" placeholder="24">
       </div>
     </div>
@@ -608,31 +613,31 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <div class="card-title">📍 Coordenadas Collar</div>
     <div class="fgrid fgrid-4">
       <div class="field">
-        <label>Tipo</label>
+        <label for="c_type">Tipo</label>
         <select id="c_type"></select>
       </div>
       <div class="field">
-        <label>Grid / Datum</label>
+        <label for="c_grid">Grid / Datum</label>
         <select id="c_grid"></select>
       </div>
       <div class="field">
-        <label>Norte (m)</label>
+        <label for="c_north">Norte (m)</label>
         <input type="number" id="c_north" step="0.001" placeholder="9390000.000">
       </div>
       <div class="field">
-        <label>Este (m)</label>
+        <label for="c_east">Este (m)</label>
         <input type="number" id="c_east" step="0.001" placeholder="500000.000">
       </div>
       <div class="field">
-        <label>Elevación (m.s.n.m.)</label>
+        <label for="c_elev">Elevación (m.s.n.m.)</label>
         <input type="number" id="c_elev" step="0.01" placeholder="0.00">
       </div>
       <div class="field">
-        <label>Método Topográfico</label>
+        <label for="h_metodo_top">Método Topográfico</label>
         <select id="h_metodo_top"></select>
       </div>
       <div class="field sp2">
-        <label>Comentarios</label>
+        <label for="h_comments">Comentarios</label>
         <textarea id="h_comments" rows="2" placeholder="Observaciones generales…"></textarea>
       </div>
     </div>
@@ -903,12 +908,12 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <h2>🔀 Insertar Duplicado</h2>
     <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Selecciona la muestra PRI de referencia y el tipo de duplicado. El duplicado se insertará inmediatamente debajo.</p>
     <div class="field">
-      <label>Muestra PRI de referencia <span class="req">*</span></label>
+      <label for="dupRefSel">Muestra PRI de referencia <span class="req">*</span></label>
       <select id="dupRefSel" style="font-family:var(--mono)"></select>
       <span class="hint" id="dupRefHint"></span>
     </div>
     <div class="field">
-      <label>Tipo de duplicado <span class="req">*</span></label>
+      <label for="dupTipoSel">Tipo de duplicado <span class="req">*</span></label>
       <select id="dupTipoSel">
         <option value="TWS">TWS — Twin (segunda mitad del core)</option>
         <option value="DUP">DUP — Duplicado de campo (cuarteo)</option>
@@ -917,7 +922,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
       </select>
     </div>
     <div class="field">
-      <label>Observaciones</label>
+      <label for="dupObs">Observaciones</label>
       <input type="text" id="dupObs" placeholder="">
     </div>
     <div class="action-row mt8">
@@ -936,11 +941,11 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <h2>⚗️ Insertar Control / Estándar</h2>
     <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Selecciona la posición de referencia y el tipo de control. Se insertará debajo del intervalo seleccionado.</p>
     <div class="field">
-      <label>Insertar después de muestra <span class="req">*</span></label>
+      <label for="ctrlRefSel">Insertar después de muestra <span class="req">*</span></label>
       <select id="ctrlRefSel" style="font-family:var(--mono)"></select>
     </div>
     <div class="field">
-      <label>Tipo de control <span class="req">*</span></label>
+      <label for="ctrlTipoSel">Tipo de control <span class="req">*</span></label>
       <select id="ctrlTipoSel" onchange="onCtrlTipoChange()">
         <option value="CBK">CBK — Blanco de campo</option>
         <option value="CRM">CRM — Material de Referencia Certificado</option>
@@ -951,7 +956,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
       <select id="ctrlCrmSel"></select>
     </div>
     <div class="field">
-      <label>Observaciones</label>
+      <label for="ctrlObs">Observaciones</label>
       <input type="text" id="ctrlObs" placeholder="">
     </div>
     <div class="action-row mt8">
