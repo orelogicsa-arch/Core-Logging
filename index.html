@@ -1,0 +1,2940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Core Logging · OreLogic</title>
+<style>
+:root {
+  --bg:        #f0f2f5;
+  --surface:   #ffffff;
+  --surface2:  #f7f8fa;
+  --surface3:  #eef0f4;
+  --border:    #d8dce6;
+  --border2:   #c4c9d8;
+  --accent:    #1a5f9e;
+  --accent2:   #1349820;
+  --accent-lt: #e8f0fb;
+  --accent-dk: #124278;
+  --ok:        #1a8a50;
+  --ok-lt:     #e6f7ee;
+  --warn:      #b85c00;
+  --warn-lt:   #fff3e0;
+  --danger:    #c0392b;
+  --danger-lt: #fdecea;
+  --text:      #1a1d28;
+  --text2:     #4a5068;
+  --text3:     #8a90a8;
+  --mono:      'JetBrains Mono','Fira Code',monospace;
+  --sans:      'Inter','Segoe UI',sans-serif;
+  --r:         6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:10px;padding:28px 32px;min-width:340px;max-width:480px;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:18px;color:var(--text)}
+.modal-close{float:right;background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);margin-top:-4px}
+.login-logo{text-align:center;margin-bottom:20px}
+.login-logo .ico{font-size:36px;display:block;margin-bottom:6px}
+.login-logo h1{font-size:18px;font-weight:800;color:var(--accent)}
+.login-logo p{font-size:11px;color:var(--text3)}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.04em;text-transform:uppercase}
+label .req{color:var(--danger)}
+input,select,textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-size:13px;font-family:var(--sans);padding:7px 10px;outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,95,158,.12)}
+input[type=number]{font-family:var(--mono)}
+select option{background:#fff}
+textarea{resize:vertical;min-height:56px}
+.error-msg{font-size:11px;color:var(--danger);margin-top:3px}
+.btn{border:none;border-radius:var(--r);padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-dk)}
+.btn-secondary{background:var(--surface2);border:1.5px solid var(--border2);color:var(--text2)}.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:var(--danger-lt);color:var(--danger);border:1.5px solid #f5b7b1}.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-ok{background:var(--ok-lt);color:var(--ok);border:1.5px solid #a9dfbf}.btn-ok:hover{background:var(--ok);color:#fff}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-icon{background:none;border:none;cursor:pointer;color:var(--text3);padding:3px 5px;border-radius:4px;transition:all .15s;font-size:14px}
+.btn-icon:hover{color:var(--danger);background:var(--danger-lt)}
+
+/* ── HEADER BAR ── */
+header{background:var(--accent);color:#fff;padding:0 20px;height:50px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(26,95,158,.3)}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:14px;letter-spacing:.02em}
+.logo-ico{width:30px;height:30px;background:rgba(255,255,255,.2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo-sub{font-size:10px;font-weight:400;opacity:.8;display:block;margin-top:1px}
+header .sp{flex:1}
+.hole-badge{background:rgba(255,255,255,.18);border-radius:4px;padding:4px 12px;font-family:var(--mono);font-size:12px;color:#fff;font-weight:700;letter-spacing:.02em}
+.user-pill{background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px 4px 8px;display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;transition:background .15s}
+.user-pill:hover{background:rgba(255,255,255,.25)}
+.user-avatar{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+
+/* ── TABS ── */
+.tab-bar{background:var(--surface);border-bottom:2px solid var(--border);display:flex;padding:0 20px;gap:2px;overflow-x:auto;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tab-btn{padding:10px 16px;background:transparent;border:none;border-bottom:2.5px solid transparent;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px;margin-bottom:-2px}
+.tab-btn.active{color:var(--accent);border-color:var(--accent);background:var(--accent-lt)}
+.tab-btn:hover:not(.active){color:var(--text);background:var(--surface3)}
+.badge{background:var(--surface3);color:var(--text3);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700}
+.badge.live{background:var(--accent);color:#fff}
+
+/* ── MAIN ── */
+main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.panel{display:none;flex:1;overflow-y:auto;padding:20px}
+.panel.active{display:block}
+
+/* ── SECTION CARD ── */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title::after{content:'';flex:1;height:1.5px;background:var(--border);margin-left:6px}
+
+/* ── FORM GRID ── */
+.fgrid{display:grid;gap:12px}
+.fgrid-2{grid-template-columns:1fr 1fr}
+.fgrid-3{grid-template-columns:1fr 1fr 1fr}
+.fgrid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fgrid-5{grid-template-columns:repeat(5,1fr)}
+.sp2{grid-column:span 2}.sp3{grid-column:span 3}.sp4{grid-column:span 4}
+.hint{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* ── DEPTH PROGRESS ── */
+.depth-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px}
+.depth-label{font-size:11px;color:var(--text2);white-space:nowrap;font-weight:600}
+.depth-track{flex:1;height:7px;background:var(--surface3);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.depth-fill{height:100%;background:linear-gradient(90deg,var(--accent),#2a80d0);border-radius:4px;transition:width .3s}
+.depth-pct{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap;font-weight:700}
+
+/* ── INTERVAL TABLE ── */
+.tbl-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.tbl-header{padding:10px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tbl-header h3{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.tbl-scroll{overflow-x:auto;max-height:400px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--surface3);color:var(--text3);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:8px 8px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:2}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--accent-lt)}
+tbody tr.row-error{background:#fff5f5;border-left:3px solid var(--danger)}
+tbody tr.row-warn{background:#fffbf0;border-left:3px solid #f0b429}
+tbody td{padding:0;vertical-align:middle}
+tbody td input,tbody td select{border:none;border-radius:0;background:transparent;padding:5px 7px;font-size:12px;width:100%;height:100%;min-width:60px}
+tbody td input:focus,tbody td select:focus{background:var(--accent-lt);box-shadow:inset 0 0 0 1.5px var(--accent);border-radius:3px;position:relative;z-index:1}
+td.computed{background:var(--ok-lt);color:var(--ok);font-family:var(--mono);font-size:11px;padding:5px 7px;white-space:nowrap;font-weight:700}
+td.computed.bad{background:var(--danger-lt);color:var(--danger)}
+td.td-act{text-align:center;padding:3px 5px;width:30px}
+.btn-add-row{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1.5px dashed var(--border2);color:var(--text2);padding:8px 14px;cursor:pointer;font-size:12px;width:100%;border-radius:0 0 7px 7px;transition:all .15s;font-weight:600}
+.btn-add-row:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-lt)}
+.err-banner{background:var(--danger-lt);border:1.5px solid #f5b7b1;border-radius:6px;padding:9px 14px;font-size:12px;color:var(--danger);margin-bottom:12px;display:none}
+.err-banner.show{display:block}
+
+/* ── STATUS BAR ── */
+.status-bar{background:var(--surface);border-top:1.5px solid var(--border);padding:5px 20px;display:flex;gap:18px;align-items:center;font-size:11px;color:var(--text3)}
+.st-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:4px}
+.st-dot.warn{background:var(--warn)}
+
+/* ── SONDAJE SELECTOR ── */
+.hole-selector{background:var(--accent-lt);border:1.5px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:12px;font-size:12px}
+.hole-selector select{max-width:260px;font-weight:700;font-family:var(--mono)}
+.hole-selector .lbl{color:var(--text2);font-weight:600;white-space:nowrap}
+
+/* ── LOG TABLE ── */
+.log-row{display:grid;grid-template-columns:140px 80px 120px 1fr;gap:0;border-bottom:1px solid var(--border);font-size:11px}
+.log-row div{padding:6px 8px}
+.log-row.header-row{background:var(--surface3);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+
+/* ── ADMIN LISTS ── */
+.list-editor{display:flex;gap:16px;align-items:flex-start}
+.list-box{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:12px}
+.list-box h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin-bottom:8px}
+.list-items{list-style:none;max-height:180px;overflow-y:auto;margin-bottom:8px}
+.list-items li{display:flex;align-items:center;justify-content:space-between;padding:4px 6px;border-radius:4px;font-size:12px;gap:6px}
+.list-items li:hover{background:var(--surface3)}
+.list-items li span{font-family:var(--mono);flex:1}
+.list-add{display:flex;gap:6px}
+.list-add input{flex:1}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;transform:translateY(60px);opacity:0;transition:transform .25s,opacity .25s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{background:var(--ok);color:#fff}
+#toast.warn{background:var(--warn);color:#fff}
+#toast.err{background:var(--danger);color:#fff}
+
+/* ── CHIPS ── */
+.chip{display:inline-flex;align-items:center;background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--text2)}
+.chip.ok{background:var(--ok-lt);color:var(--ok);border-color:#a9dfbf}
+.chip.warn{background:var(--warn-lt);color:var(--warn);border-color:#ffcc80}
+.chip.err{background:var(--danger-lt);color:var(--danger);border-color:#f5b7b1}
+
+/* ── HOLE CARD ── */
+.hole-card{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .15s}
+.hole-card:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(26,95,158,.1)}
+.hole-card.active-hole{border-color:var(--accent);background:var(--accent-lt)}
+.hole-card-id{font-family:var(--mono);font-weight:700;color:var(--accent);font-size:13px}
+.hole-card-meta{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* ── GEOLOGY SYMBOLOGY CELL ── */
+td.symb-cell{padding:2px 4px;min-width:56px;vertical-align:middle}
+.symb-wrap{display:flex;flex-direction:column;gap:2px;align-items:center}
+.symb-lito{height:14px;border-radius:2px;width:52px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;letter-spacing:.04em;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.symb-oz{height:10px;border-radius:2px;width:52px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;letter-spacing:.03em;text-shadow:0 1px 2px rgba(0,0,0,.4);opacity:.9}
+/* ── DENSITY STATUS ── */
+td.dens-ok{background:var(--ok-lt)!important;color:var(--ok);font-size:10px;font-weight:700;padding:4px 6px;text-align:center;white-space:nowrap}
+td.dens-warn{background:var(--warn-lt)!important;color:var(--warn);font-size:10px;font-weight:700;padding:4px 6px;text-align:center;white-space:nowrap}
+td.dens-err{background:var(--danger-lt)!important;color:var(--danger);font-size:10px;font-weight:700;padding:4px 6px;text-align:center;white-space:nowrap}
+td.dens-val{background:var(--ok-lt);color:var(--ok);font-family:var(--mono);font-size:11px;font-weight:700;padding:5px 7px;white-space:nowrap}
+/* ── LEGEND ── */
+.leg-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap}
+.leg-swatch{width:14px;height:14px;border-radius:2px;flex-shrink:0}
+/* ── DUP / CTRL ROW HIGHLIGHT ── */
+tbody tr.row-dup td{background:#f0fdf4}
+tbody tr.row-ctrl td{background:#fef9e7}
+tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)}
+
+/* ── USER TABLE ── */
+.user-table{width:100%;border-collapse:collapse;font-size:12px}
+.user-table th{background:var(--surface3);color:var(--text3);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1.5px solid var(--border)}
+.user-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.user-table tr:hover td{background:var(--accent-lt)}
+.role-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.role-badge.admin{background:#fef3c7;color:#92400e}
+.role-badge.geologo{background:var(--ok-lt);color:var(--ok)}
+.role-badge.inactivo{background:var(--danger-lt);color:var(--danger)}
+
+/* ── EXPORT MODAL ── */
+.export-hole-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid var(--border);border-radius:6px;margin-bottom:7px;cursor:pointer;transition:all .15s;background:var(--surface2)}
+.export-hole-item:hover,.export-hole-item.selected{border-color:var(--accent);background:var(--accent-lt)}
+.export-hole-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.export-hole-id{font-family:var(--mono);font-weight:700;color:var(--accent);font-size:12px}
+.export-hole-meta{font-size:10px;color:var(--text3)}
+.export-section-check{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.export-section-check label{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;background:var(--surface2);transition:all .15s;text-transform:none;letter-spacing:0}
+.export-section-check label:hover,.export-section-check label.checked{border-color:var(--accent);background:var(--accent-lt);color:var(--accent)}
+.export-section-check input{width:14px;height:14px;accent-color:var(--accent)}
+.zip-progress{display:none;margin-top:12px;text-align:center;color:var(--accent);font-size:12px;font-weight:600}
+.zip-progress.show{display:block}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── MISC ── */
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.sep{height:1px;background:var(--border);margin:14px 0}
+.flex-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.tag-blue{background:var(--accent-lt);color:var(--accent)}
+.tag-green{background:var(--ok-lt);color:var(--ok)}
+.tag-orange{background:var(--warn-lt);color:var(--warn)}
+.mt8{margin-top:8px}.mt14{margin-top:14px}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay open" id="loginModal">
+  <div class="modal" style="min-width:340px;max-width:380px">
+    <div class="login-logo">
+      <span class="ico">⬡</span>
+      <h1>CORE LOGGING</h1>
+      <p>OreLogic S.A. · Bayóvar · Miski Mayo</p>
+    </div>
+    <div class="field">
+      <label>Usuario</label>
+      <select id="loginUserSel" onchange="onLoginUserChange()">
+        <option value="">— Seleccionar usuario —</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input id="loginPwd" type="password" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <span class="error-msg" id="loginErr"></span>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px;justify-content:center" onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     NEW HOLE MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="newHoleModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('newHoleModal')">✕</button>
+    <h2>📋 Nuevo Sondaje</h2>
+    <div class="field">
+      <label>Número de Sondaje <span class="req">*</span></label>
+      <input id="nh_id" type="text" placeholder="BAY-26-DH-0061">
+      <span class="error-msg" id="nhErr"></span>
+    </div>
+    <div class="field">
+      <label>Proyecto</label>
+      <select id="nh_proj"></select>
+    </div>
+    <div class="fgrid fgrid-2" style="gap:10px">
+      <div class="field">
+        <label>Tipo Sondaje</label>
+        <select id="nh_tipo"></select>
+      </div>
+      <div class="field">
+        <label>Diámetro</label>
+        <select id="nh_diam"></select>
+      </div>
+    </div>
+    <div class="action-row mt8">
+      <button class="btn btn-primary" onclick="createNewHole()">Crear Sondaje</button>
+      <button class="btn btn-secondary" onclick="closeModal('newHoleModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     EXPORT ZIP MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal" style="min-width:460px;max-width:560px">
+    <button class="modal-close" onclick="closeModal('exportModal')">✕</button>
+    <h2>⬇ Exportar a ZIP</h2>
+
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">
+        Sondaje(s) a exportar
+        <span style="margin-left:8px;font-weight:400;text-transform:none;letter-spacing:0">
+          <a href="#" onclick="selectAllHoles(true);return false" style="color:var(--accent);font-size:11px">todos</a> ·
+          <a href="#" onclick="selectAllHoles(false);return false" style="color:var(--text3);font-size:11px">ninguno</a>
+        </span>
+      </div>
+      <div id="exportHoleList" style="max-height:220px;overflow-y:auto"></div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Archivos a incluir</div>
+    <div class="export-section-check" id="exportSections">
+      <label id="lbl_header"><input type="checkbox" value="header" checked onchange="toggleSectionLabel(this,'lbl_header')"> Header</label>
+      <label id="lbl_marcacion"><input type="checkbox" value="marcacion" checked onchange="toggleSectionLabel(this,'lbl_marcacion')"> Marcación</label>
+      <label id="lbl_geologia"><input type="checkbox" value="geologia" checked onchange="toggleSectionLabel(this,'lbl_geologia')"> Geología</label>
+      <label id="lbl_muestreo"><input type="checkbox" value="muestreo" checked onchange="toggleSectionLabel(this,'lbl_muestreo')"> Muestreo</label>
+      <label id="lbl_densidad"><input type="checkbox" value="densidad" checked onchange="toggleSectionLabel(this,'lbl_densidad')"> Densidad</label>
+    </div>
+
+    <div class="zip-progress" id="zipProgress">⏳ Generando ZIP…</div>
+
+    <div class="action-row mt8">
+      <button class="btn btn-primary" onclick="doExportZip()">📦 Descargar ZIP</button>
+      <button class="btn btn-secondary" onclick="closeModal('exportModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     USER MANAGEMENT MODAL (admin only)
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="userMgmtModal">
+  <div class="modal" style="min-width:500px;max-width:600px">
+    <button class="modal-close" onclick="closeModal('userMgmtModal')">✕</button>
+    <h2>👥 Gestión de Usuarios</h2>
+
+    <table class="user-table" style="margin-bottom:14px">
+      <thead><tr><th>Usuario</th><th>Nombre completo</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+
+    <div style="border-top:1.5px solid var(--border);padding-top:14px;margin-top:6px">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">➕ Nuevo usuario</div>
+      <div class="fgrid fgrid-2" style="gap:10px">
+        <div class="field" style="margin-bottom:0">
+          <label>Usuario (login)</label>
+          <input type="text" id="nu_login" placeholder="m.apellido">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Nombre completo</label>
+          <input type="text" id="nu_name" placeholder="Miguel Apellido">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Contraseña</label>
+          <input type="password" id="nu_pwd" placeholder="••••">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Rol</label>
+          <select id="nu_role">
+            <option value="geologo">Geólogo / Técnico</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+      </div>
+      <span class="error-msg" id="nuErr" style="display:block;margin-top:4px"></span>
+      <div class="action-row mt8">
+        <button class="btn btn-primary btn-sm" onclick="addUser()">Crear usuario</button>
+      </div>
+    </div>
+  </div>
+</div>
+<header>
+  <div class="logo">
+    <div class="logo-ico">⬡</div>
+    <div>CORE LOGGING<span class="logo-sub">Geología — CMMM · Bayóvar</span></div>
+  </div>
+  <div class="sp"></div>
+  <div class="hole-badge" id="topHoleBadge">—</div>
+  <button class="btn" style="background:rgba(255,255,255,.18);color:#fff;font-size:12px;padding:5px 13px" onclick="openExportModal()">⬇ Exportar ZIP</button>
+  <div class="user-pill" onclick="toggleUserMenu()">
+    <div class="user-avatar" id="userAvatar">?</div>
+    <span id="userLabel">—</span>
+  </div>
+</header>
+
+<!-- ── HOLE SELECTOR BAR ── -->
+<div class="hole-selector" id="holeSelectorBar" style="display:none">
+  <span class="lbl">Sondaje activo:</span>
+  <select id="holeSelectorDropdown" onchange="loadHole(this.value)" style="max-width:280px"></select>
+  <button class="btn btn-primary btn-sm" onclick="openModal('newHoleModal')">+ Nuevo</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TABS
+══════════════════════════════════════════ -->
+<div class="tab-bar" id="mainTabBar">
+  <button class="tab-btn active" onclick="switchTab('header')" id="tab-header">📋 Header</button>
+  <button class="tab-btn" onclick="switchTab('marcacion')" id="tab-marcacion">📏 Marcación <span class="badge" id="badge-marcacion">0</span></button>
+  <button class="tab-btn" onclick="switchTab('geologia')" id="tab-geologia">🪨 Geología <span class="badge" id="badge-geologia">0</span></button>
+  <button class="tab-btn" onclick="switchTab('muestreo')" id="tab-muestreo">🧪 Muestreo <span class="badge" id="badge-muestreo">0</span></button>
+  <button class="tab-btn" onclick="switchTab('densidad')" id="tab-densidad">⚖️ Densidad <span class="badge" id="badge-densidad">0</span></button>
+  <button class="tab-btn" onclick="switchTab('log')" id="tab-log">📜 Log <span class="badge" id="badge-log">0</span></button>
+  <button class="tab-btn admin-only" onclick="switchTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
+  <button class="tab-btn" onclick="switchTab('instrucciones')" id="tab-instrucciones">📖 Instrucciones</button>
+  <button class="tab-btn" onclick="switchTab('creditos')" id="tab-creditos">ℹ️ Créditos</button>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════
+     TAB: HEADER
+══════════════════════════════════════════ -->
+<div class="panel active" id="panel-header">
+
+  <div class="card">
+    <div class="card-title">📋 Datos Generales del Sondaje</div>
+    <div class="fgrid fgrid-4">
+      <div class="field">
+        <label>Proyecto <span class="req">*</span></label>
+        <select id="h_project" onchange="syncBadge()"></select>
+      </div>
+      <div class="field sp2">
+        <label>Número de Sondaje <span class="req">*</span></label>
+        <input type="text" id="h_holenum" placeholder="BAY-26-DH-0060" oninput="syncBadge()" readonly style="background:var(--surface3);color:var(--accent);font-weight:700;font-family:var(--mono)">
+        <span class="hint">Asignado automáticamente al crear el sondaje</span>
+      </div>
+      <div class="field">
+        <label>Fase</label>
+        <select id="h_fase"></select>
+      </div>
+      <div class="field">
+        <label>Tipo de Sondaje</label>
+        <select id="h_tipo"></select>
+      </div>
+      <div class="field">
+        <label>Diámetro</label>
+        <select id="h_diam"></select>
+      </div>
+      <div class="field">
+        <label>Ubicación</label>
+        <select id="h_ubic"></select>
+      </div>
+      <div class="field">
+        <label>Plataforma</label>
+        <input type="text" id="h_plat" placeholder="M48-134">
+      </div>
+      <div class="field">
+        <label>Azimuth (°)</label>
+        <select id="h_az"></select>
+      </div>
+      <div class="field">
+        <label>Dip (°)</label>
+        <select id="h_dip"></select>
+      </div>
+      <div class="field">
+        <label>Profundidad Final (m)</label>
+        <input type="number" id="h_prof" step="0.01" placeholder="45.8" oninput="updateDepthBars()">
+      </div>
+      <div class="field">
+        <label>Is Completed</label>
+        <select id="h_completed"><option value="Y">Sí (Y)</option><option value="N" selected>No (N)</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👤 Personal</div>
+    <div class="fgrid fgrid-4">
+      <div class="field">
+        <label>Geólogo</label>
+        <select id="h_geologo"></select>
+      </div>
+      <div class="field">
+        <label>Técnico Geología</label>
+        <select id="h_tec"></select>
+      </div>
+      <div class="field">
+        <label>Cliente</label>
+        <select id="h_cliente"></select>
+      </div>
+      <div class="field">
+        <label>Compañía</label>
+        <select id="h_cia"></select>
+      </div>
+      <div class="field">
+        <label>Empresa Perforación</label>
+        <select id="h_epf"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📅 Fechas</div>
+    <div class="fgrid fgrid-4">
+      <div class="field">
+        <label>Fecha Inicio <span class="req">*</span></label>
+        <input type="date" id="h_inicio">
+      </div>
+      <div class="field">
+        <label>Fecha Fin</label>
+        <input type="date" id="h_fin">
+      </div>
+      <div class="field">
+        <label>Fecha de Ingreso</label>
+        <input type="date" id="h_fing">
+      </div>
+      <div class="field">
+        <label>Número de Cajas</label>
+        <input type="number" id="h_cajas" min="0" placeholder="24">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📍 Coordenadas Collar</div>
+    <div class="fgrid fgrid-4">
+      <div class="field">
+        <label>Tipo</label>
+        <select id="c_type"></select>
+      </div>
+      <div class="field">
+        <label>Grid / Datum</label>
+        <select id="c_grid"></select>
+      </div>
+      <div class="field">
+        <label>Norte (m)</label>
+        <input type="number" id="c_north" step="0.001" placeholder="9390000.000">
+      </div>
+      <div class="field">
+        <label>Este (m)</label>
+        <input type="number" id="c_east" step="0.001" placeholder="500000.000">
+      </div>
+      <div class="field">
+        <label>Elevación (m.s.n.m.)</label>
+        <input type="number" id="c_elev" step="0.01" placeholder="0.00">
+      </div>
+      <div class="field">
+        <label>Método Topográfico</label>
+        <select id="h_metodo_top"></select>
+      </div>
+      <div class="field sp2">
+        <label>Comentarios</label>
+        <textarea id="h_comments" rows="2" placeholder="Observaciones generales…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-primary" onclick="saveHeader()">💾 Guardar Header</button>
+    <button class="btn btn-secondary" onclick="loadExample()">📂 Cargar Ejemplo</button>
+  </div>
+
+</div><!-- /panel-header -->
+
+
+<!-- ══════════════════════════════════════════
+     TAB: MARCACIÓN
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-marcacion">
+
+  <div class="depth-wrap">
+    <span class="depth-label">Avance marcado</span>
+    <div class="depth-track"><div class="depth-fill" id="marcFill" style="width:0%"></div></div>
+    <span class="depth-pct" id="marcPct">0 / — m</span>
+    <span id="marcStatus" class="chip"></span>
+  </div>
+
+  <div id="marcErrBanner" class="err-banner"></div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header">
+      <h3>📏 Intervalos de Marcación</h3>
+      <div class="flex-row">
+        <button class="btn btn-secondary btn-sm" onclick="autoFillMarcacion()">⚡ Rellenar automático (1.5 m)</button>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table id="tblMarc">
+        <thead><tr>
+          <th style="min-width:32px;text-align:center">#</th>
+          <th>From (m)</th><th>To (m)</th><th>Length</th>
+          <th>Rec m</th><th>Rec %</th><th>Rec Geo</th><th>Rec Geo %</th>
+          <th>Comentarios</th><th></th>
+        </tr></thead>
+        <tbody id="bodyMarc"></tbody>
+      </table>
+    </div>
+    <button class="btn-add-row" onclick="addMarcRow()">＋ Agregar intervalo</button>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-primary" onclick="saveSection('marcacion')">💾 Guardar Marcación</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     TAB: GEOLOGÍA
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-geologia">
+
+  <div class="depth-wrap">
+    <span class="depth-label">Intervalo logueado</span>
+    <div class="depth-track"><div class="depth-fill" id="geoFill" style="width:0%"></div></div>
+    <span class="depth-pct" id="geoPct">0 / — m</span>
+    <span id="geoStatus" class="chip"></span>
+  </div>
+
+  <div id="geoErrBanner" class="err-banner"></div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header">
+      <h3>🪨 Intervalos Litológicos</h3>
+    </div>
+    <div class="tbl-scroll">
+      <table id="tblGeo">
+        <thead><tr>
+          <th style="min-width:32px;text-align:center">#</th>
+          <th>From (m)</th><th>To (m)</th><th>Length</th>
+          <th style="min-width:60px">Simbología</th>
+          <th>Lito 1 ★</th><th>Lito Mod</th>
+          <th>Ore Zone ★</th><th>Ore Zone Mod</th>
+          <th>Color</th><th>Intensidad</th><th>Contacto</th>
+          <th>Granulometría</th><th>Fósiles</th>
+          <th>Dens?</th><th>Muestrea?</th><th>Circuito?</th><th>% Vlls</th>
+          <th>Descripción</th><th></th>
+        </tr></thead>
+        <tbody id="bodyGeo"></tbody>
+      </table>
+    </div>
+    <button class="btn-add-row" onclick="addGeoRow()">＋ Agregar intervalo geológico</button>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-primary" onclick="saveSection('geologia')">💾 Guardar Geología</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     TAB: MUESTREO
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-muestreo">
+
+  <div class="depth-wrap">
+    <span class="depth-label">Intervalo muestreado</span>
+    <div class="depth-track"><div class="depth-fill" id="mueFill" style="width:0%"></div></div>
+    <span class="depth-pct" id="muePct">0 / — m</span>
+    <span id="mueStatus" class="chip"></span>
+  </div>
+
+  <div id="mueErrBanner" class="err-banner"></div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header">
+      <h3>🧪 Registro de Muestras</h3>
+      <div class="flex-row" style="gap:6px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="importFromGeo()">📥 Importar de Geología</button>
+        <button class="btn btn-secondary btn-sm" onclick="openDupModal()">🔀 Insertar Duplicado</button>
+        <button class="btn btn-secondary btn-sm" onclick="openCtrlModal()">⚗️ Insertar Control/Estándar</button>
+        <button class="btn btn-secondary btn-sm" onclick="autoNumMuestras()">⚡ Auto-numerar</button>
+        <button class="btn btn-ok btn-sm" onclick="printSamplingPlan()">🖨️ Plan de Muestreo</button>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table id="tblMue">
+        <thead><tr>
+          <th style="min-width:32px;text-align:center">#</th>
+          <th>Ore Zone</th><th>From</th><th>To</th><th>Length</th>
+          <th>N° Muestra ★</th><th>Tipo Muestra</th><th>Tipo Control</th>
+          <th>Ctrl Gran.?</th><th>Fecha Muestreo</th>
+          <th>Peso (g)</th><th>N° Mtra Padre</th>
+          <th>Comentarios</th><th></th>
+        </tr></thead>
+        <tbody id="bodyMue"></tbody>
+      </table>
+    </div>
+    <button class="btn-add-row" onclick="addMueRow()">＋ Agregar muestra</button>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-primary" onclick="saveSection('muestreo')">💾 Guardar Muestreo</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     TAB: DENSIDAD
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-densidad">
+
+  <div class="depth-wrap">
+    <span class="depth-label">Muestras de densidad</span>
+    <div class="depth-track"><div class="depth-fill" id="densFill" style="width:0%"></div></div>
+    <span class="depth-pct" id="densPct">0 registros</span>
+    <span id="densStatus" class="chip"></span>
+  </div>
+
+  <div id="densErrBanner" class="err-banner"></div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header">
+      <h3>⚖️ Densidad de Campo</h3>
+      <div class="flex-row" style="gap:6px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="importFromGeoToDens()">📥 Importar de Geología (DENS=Y)</button>
+        <button class="btn btn-secondary btn-sm" onclick="autoNumDens()">⚡ Auto-numerar</button>
+        <span class="chip">P.Húm &gt; P.Seco · CV de L1-L4 y D1-D4 &lt; 5%</span>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table id="tblDens">
+        <thead><tr>
+          <th style="min-width:32px;text-align:center">#</th>
+          <th>From (m)</th><th>To (m)</th>
+          <th>Desde Dens</th><th>Hasta Dens</th>
+          <th>N° Muestra</th><th>Tipo Dens</th>
+          <th>Fecha Muestreo</th>
+          <th>P.Húm. (g)</th><th>P.Seco (g)</th>
+          <th>L1 (cm)</th><th>L2 (cm)</th><th>L3 (cm)</th><th>L4 (cm)</th>
+          <th>D1 (cm)</th><th>D2 (cm)</th><th>D3 (cm)</th><th>D4 (cm)</th>
+          <th>Estado</th><th></th>
+        </tr></thead>
+        <tbody id="bodyDens"></tbody>
+      </table>
+    </div>
+    <button class="btn-add-row" onclick="addDensRow()">＋ Agregar muestra de densidad</button>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-primary" onclick="saveSection('densidad')">💾 Guardar Densidad</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     TAB: INSTRUCCIONES
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-instrucciones">
+  <div class="card">
+    <div class="card-title">📖 Guía de Uso — Core Logging OreLogic</div>
+    <div style="line-height:1.7;color:var(--text2);font-size:13px">
+
+      <h3 style="color:var(--accent);font-size:13px;margin:0 0 8px">🔐 Inicio de Sesión</h3>
+      <p>Selecciona tu usuario del dropdown y escribe tu contraseña. El administrador (usuario <code style="background:var(--surface3);padding:1px 5px;border-radius:3px">admin</code>, contraseña <code style="background:var(--surface3);padding:1px 5px;border-radius:3px">1234</code>) tiene acceso completo. Los demás usuarios acceden como Geólogo/Técnico.</p>
+
+      <div style="height:14px"></div>
+      <h3 style="color:var(--accent);font-size:13px;margin:0 0 8px">📋 Flujo de Trabajo Recomendado</h3>
+      <ol style="padding-left:18px;display:flex;flex-direction:column;gap:5px">
+        <li><b>Crear sondaje</b> → Botón "+ Nuevo" en la barra superior. Asigna ID, proyecto, tipo y diámetro.</li>
+        <li><b>Header</b> → Completa azimuth, dip, profundidad final, geólogo, fechas y coordenadas collar. Guarda con <b>💾 Guardar Header</b>.</li>
+        <li><b>Marcación</b> → Usa <b>⚡ Rellenar automático</b> (cajas de 1.5m) o agrega filas manualmente. Los intervalos se validan automáticamente (sin gaps, sin solapamientos).</li>
+        <li><b>Geología</b> → Registra litología, ore zone, color, intensidad, contacto, granulometría por intervalo. La columna <b>Simbología</b> muestra el código gráfico de lito y ore zone. Marca <b>Se Muestrea? = Y</b> en los intervalos a muestrear.</li>
+        <li><b>Muestreo</b> → Usa <b>📥 Importar de Geología</b> para traer automáticamente los intervalos marcados con Y. Luego auto-numera las muestras. Inserta duplicados y controles con los botones correspondientes.</li>
+        <li><b>Densidad</b> → Registra pesos húmedo/seco y las 4 medidas de largo (L) y diámetro (D). El sistema valida automáticamente consistencia de medidas y calcula densidad.</li>
+        <li><b>Exportar</b> → Botón <b>⬇ Exportar ZIP</b> en el topbar. Selecciona uno o varios sondajes y las secciones a incluir. Se descarga un archivo ZIP con CSV por carpeta.</li>
+      </ol>
+
+      <div style="height:14px"></div>
+      <h3 style="color:var(--accent);font-size:13px;margin:0 0 8px">🪨 Simbología de Geología</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);width:100%">Litología</div>
+        <div id="litoLegend" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <div style="font-size:12px;font-weight:700;color:var(--text2);width:100%;margin-top:6px">Ore Zone</div>
+        <div id="ozLegend" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+
+      <div style="height:14px"></div>
+      <h3 style="color:var(--accent);font-size:13px;margin:0 0 8px">⚖️ Densidad — Validaciones</h3>
+      <ul style="padding-left:18px;display:flex;flex-direction:column;gap:4px">
+        <li><b>Peso Húmedo &gt; Peso Seco</b>: el peso húmedo siempre debe ser mayor. Una diferencia &gt; 20% genera advertencia.</li>
+        <li><b>Medidas L1–L4</b>: representan largos del core en cm. El coeficiente de variación (CV) debe ser &lt; 5% para ser válido (&lt; 10% genera advertencia).</li>
+        <li><b>Medidas D1–D4</b>: diámetros del core. Mismo criterio CV &lt; 5%.</li>
+        <li>El <b>Volumen</b> se calcula como cilindro: V = π × (D̄/2)² × L̄</li>
+        <li>La <b>Densidad</b> = Peso Seco / Volumen (g/cm³).</li>
+      </ul>
+
+      <div style="height:14px"></div>
+      <h3 style="color:var(--accent);font-size:13px;margin:0 0 8px">🔀 Controles de Calidad (QAQC)</h3>
+      <ul style="padding-left:18px;display:flex;flex-direction:column;gap:4px">
+        <li><b>Duplicado (DUP)</b>: copia del mismo intervalo de una muestra PRI. Se inserta inmediatamente debajo de la muestra seleccionada.</li>
+        <li><b>Twin (TWS)</b>: segunda mitad del core del mismo intervalo.</li>
+        <li><b>Blanco (CBK)</b>: material estéril certificado para detectar contaminación cruzada.</li>
+        <li><b>CRM/Estándar</b>: material de referencia certificado (BAY01-19, BAY02-19, etc.) para verificar precisión analítica.</li>
+        <li>Los controles se insertan <b>siempre debajo</b> del intervalo referenciado.</li>
+      </ul>
+
+      <div style="height:14px"></div>
+      <h3 style="color:var(--accent);font-size:13px;margin:0 0 8px">⚙️ Administración (solo Admin)</h3>
+      <ul style="padding-left:18px;display:flex;flex-direction:column;gap:4px">
+        <li><b>Listas configurables</b>: todos los desplegables (litología, ore zone, geólogos, etc.) se editan desde Admin → Listas.</li>
+        <li><b>Usuarios</b>: crear, activar/desactivar, resetear contraseñas desde Admin → Usuarios.</li>
+        <li><b>Log de actividad</b>: registro completo de todas las acciones con timestamp, usuario y sondaje.</li>
+      </ul>
+
+      <div style="height:14px"></div>
+      <div style="background:var(--accent-lt);border:1.5px solid var(--border);border-radius:6px;padding:12px 16px;font-size:12px;color:var(--text2)">
+        ℹ️ <b>Persistencia</b>: todos los datos se guardan en el <code>localStorage</code> del navegador. Para compartir entre equipos, usa la exportación ZIP e importa los CSV al sistema corporativo. Versión <b>3.0</b> · OreLogic S.A. · Miski Mayo — Bayóvar.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL: INSERTAR DUPLICADO
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="dupModal">
+  <div class="modal" style="min-width:440px;max-width:520px">
+    <button class="modal-close" onclick="closeModal('dupModal')">✕</button>
+    <h2>🔀 Insertar Duplicado</h2>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Selecciona la muestra PRI de referencia y el tipo de duplicado. El duplicado se insertará inmediatamente debajo.</p>
+    <div class="field">
+      <label>Muestra PRI de referencia <span class="req">*</span></label>
+      <select id="dupRefSel" style="font-family:var(--mono)"></select>
+      <span class="hint" id="dupRefHint"></span>
+    </div>
+    <div class="field">
+      <label>Tipo de duplicado <span class="req">*</span></label>
+      <select id="dupTipoSel">
+        <option value="TWS">TWS — Twin (segunda mitad del core)</option>
+        <option value="DUP">DUP — Duplicado de campo (cuarteo)</option>
+        <option value="CDP">CDP — Duplicado de preparación</option>
+        <option value="PDS">PDS — Duplicado de análisis (pulpa)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Observaciones</label>
+      <input type="text" id="dupObs" placeholder="">
+    </div>
+    <div class="action-row mt8">
+      <button class="btn btn-primary" onclick="insertDuplicado()">✔ Insertar</button>
+      <button class="btn btn-secondary" onclick="closeModal('dupModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: INSERTAR CONTROL / ESTÁNDAR
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="ctrlModal">
+  <div class="modal" style="min-width:440px;max-width:520px">
+    <button class="modal-close" onclick="closeModal('ctrlModal')">✕</button>
+    <h2>⚗️ Insertar Control / Estándar</h2>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Selecciona la posición de referencia y el tipo de control. Se insertará debajo del intervalo seleccionado.</p>
+    <div class="field">
+      <label>Insertar después de muestra <span class="req">*</span></label>
+      <select id="ctrlRefSel" style="font-family:var(--mono)"></select>
+    </div>
+    <div class="field">
+      <label>Tipo de control <span class="req">*</span></label>
+      <select id="ctrlTipoSel" onchange="onCtrlTipoChange()">
+        <option value="CBK">CBK — Blanco de campo</option>
+        <option value="CRM">CRM — Material de Referencia Certificado</option>
+      </select>
+    </div>
+    <div class="field" id="ctrlCrmField">
+      <label>Código CRM / Estándar</label>
+      <select id="ctrlCrmSel"></select>
+    </div>
+    <div class="field">
+      <label>Observaciones</label>
+      <input type="text" id="ctrlObs" placeholder="">
+    </div>
+    <div class="action-row mt8">
+      <button class="btn btn-primary" onclick="insertControl()">✔ Insertar</button>
+      <button class="btn btn-secondary" onclick="closeModal('ctrlModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: CRÉDITOS
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-creditos">
+  <div class="card" style="max-width:600px;margin:0 auto">
+    <div style="text-align:center;padding:20px 0 10px">
+      <div style="font-size:48px;margin-bottom:12px">⬡</div>
+      <h1 style="font-size:22px;font-weight:900;color:var(--accent);letter-spacing:.02em">CORE LOGGING</h1>
+      <p style="font-size:13px;color:var(--text2);margin-top:4px">Sistema de Registro Geológico de Sondajes Diamantina</p>
+    </div>
+    <div class="sep"></div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin:16px 0">
+      <div style="flex:1;min-width:180px">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px">Versión</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent);font-family:var(--mono)">v3.0.0</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Implementación de Prueba · 2026</div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px">Fecha de Build</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)" id="creditDate"></div>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div style="margin:16px 0">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px">Preparado por</div>
+      <div style="display:flex;align-items:center;gap:14px;background:#e8f0fb;border:1.5px solid var(--accent);border-radius:8px;padding:14px 16px">
+        <div style="width:44px;height:44px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff">🏭</div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--accent)">Superintendencia de Geología</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:3px">Cía. Minera Miski Mayo S.R.L.</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">Yacimiento de Fosfatos Bayóvar · Piura, Perú</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Departamento de Geología · Operaciones · CMMM</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin:16px 0">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px">Desarrollado por</div>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:14px 16px">
+        <div style="width:44px;height:44px;background:var(--surface3);border:2px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⬡</div>
+        <div>
+          <div style="font-size:15px;font-weight:800;color:var(--text2)">OreLogic S.A.</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">Soluciones en Geoinformática y Geoestadística Minera</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Piura, Perú · orelogic.pe</div>
+        </div>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div style="margin:16px 0">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px">Módulos incluidos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:var(--accent)">📋 Header & Coordenadas</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Registro collar, personal, fechas</div></div>
+        <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:var(--accent)">📏 Marcación de Caja</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Recuperación física y geológica</div></div>
+        <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:var(--accent)">🪨 Geología Litológica</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Lito, Ore Zone, simbología gráfica</div></div>
+        <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:var(--accent)">🧪 Muestreo QAQC</div><div style="font-size:11px;color:var(--text2);margin-top:2px">PRI, DUP, TWS, CBK, CRM</div></div>
+        <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:var(--accent)">⚖️ Densidad de Campo</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Medidas L/D, validación CV</div></div>
+        <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:var(--accent)">📦 Exportación ZIP</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Multi-sondaje, CSV por módulo</div></div>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div style="background:var(--warn-lt);border:1.5px solid #ffcc80;border-radius:6px;padding:12px 16px;font-size:12px;color:var(--warn);margin-top:4px">
+      ⚠️ <b>Implementación de Prueba</b> — Este sistema está en fase de evaluación piloto. Los datos se almacenan localmente en el navegador (<code>localStorage</code>). Para uso en producción se requiere validación formal aprobada por CMMM y OreLogic S.A.
+    </div>
+    <div style="text-align:center;margin-top:20px;font-size:11px;color:var(--text3)">
+      © 2026 OreLogic S.A. · Todos los derechos reservados<br>
+      Core Logging v3.0 — Prueba Piloto · CMMM · Bayóvar
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-log">
+  <div class="card">
+    <div class="card-title">📜 Registro de Actividad</div>
+    <div class="flex-row" style="margin-bottom:12px;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="exportLog()">⬇ Exportar log</button>
+      <button class="btn btn-secondary btn-sm" onclick="clearLog()" id="btnClearLog" style="display:none">🗑 Limpiar log</button>
+    </div>
+    <div class="log-row header-row">
+      <div>Fecha / Hora</div><div>Usuario</div><div>Sondaje</div><div>Acción</div>
+    </div>
+    <div id="logContainer" style="max-height:500px;overflow-y:auto"></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     TAB: ADMIN
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-admin">
+
+  <div class="card">
+    <div class="card-title">🗂 Gestión de Sondajes</div>
+    <div id="holeListAdmin" style="max-height:300px;overflow-y:auto"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙️ Listas Configurables</div>
+    <div class="flex-row" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <select id="listSelector" onchange="renderListEditor()" style="max-width:260px;font-weight:700">
+        <option value="">— Seleccionar lista —</option>
+      </select>
+      <span class="chip" id="listHint"></span>
+    </div>
+    <div id="listEditorContainer"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👥 Usuarios del Sistema</div>
+    <div class="flex-row" style="margin-bottom:12px">
+      <button class="btn btn-primary btn-sm" onclick="openModal('userMgmtModal');renderUserTable()">⚙️ Administrar usuarios</button>
+    </div>
+    <table class="user-table">
+      <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th></tr></thead>
+      <tbody id="userTablePreview"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👤 Sesión actual</div>
+    <div class="flex-row">
+      <span class="chip" id="adminUserChip"></span>
+      <button class="btn btn-danger btn-sm" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+</div>
+
+</main>
+
+<!-- ── STATUS BAR ── -->
+<div class="status-bar">
+  <span><span class="st-dot" id="stDot"></span><span id="stMsg">Sin datos guardados</span></span>
+  <span>Marc: <b id="stMarc">0</b></span>
+  <span>Geo: <b id="stGeo">0</b></span>
+  <span>Muestreo: <b id="stMue">0</b></span>
+  <span style="margin-left:auto;color:var(--text3)">v2.0 · OreLogic S.A.</span>
+</div>
+
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SCRIPT
+══════════════════════════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════
+   DEFAULT LISTS (editable via Admin)
+═══════════════════════════════════════════ */
+const DEFAULT_LISTS = {
+  proyecto:       ['MIN','EXP','PROD'],
+  tipo_sondaje:   ['DD','RC','AC'],
+  diametro:       ['PQ','HQ','NQ','BQ','AQ'],
+  fase:           ['F1','F2','F3','F4','EXP'],
+  ubicacion:      ['M48','M49','M50','M51','M52','M47','M46'],
+  azimuth:        ['0.0','45.0','90.0','135.0','180.0','270.0','360.0'],
+  dip:            ['-90.0','-85.0','-80.0','-75.0','-70.0','-60.0','-45.0'],
+  geologo:        ['MZS','CEF','GRC','JBC'],
+  tecnico:        ['CEF','MDR','JBC','KDR'],
+  cliente:        ['CP','CMMM'],
+  compania:       ['CMMM','OreLogic','Contratista'],
+  empresa_perf:   ['CMMM','Boart Longyear','Major Drilling'],
+  metodo_top:     ['GPS','DGPS','Topografía'],
+  coord_tipo:     ['COLLAR','PORTATIVO','TERRENO'],
+  coord_grid:     ['WGS 84 / UTM zone 17S','WGS 84 / UTM zone 18S','PSAD56 / UTM zone 17S'],
+  lito:           ['ACL','ARE','ARN','DAR','DIF','DIS','FOS','TUF'],
+  ore_zone:       ['SAR','SDI_0','SDI_1A','SDI_1B','SDI_1C','SDI_1D','SDI_1E','SDI_1F','SDI_1G','SDI_2','CA0','CA1','CA2','CA3','CA4','CA5','I12','I23','I23A','I23B','I34','I45','I45B','I56','CLA','UF23_1','UF23_2','UF45'],
+  color:          ['BEI','GRI','MAR','NAR','NEG','VER'],
+  intensidad:     ['CLA','OSC'],
+  contacto:       ['GR','BR'],
+  granulometria:  ['ARA','ARC','GRV','SIL','LIM'],
+  fosiles:        ['NVI','FOS','ECH','OTR'],
+  tipo_muestra:   ['PRI','TWS','CDP','PDS','Control'],
+  tipo_control:   ['BAY01-19','BAY02-19','CBK','STD'],
+};
+
+const LIST_LABELS = {
+  proyecto:'Proyecto', tipo_sondaje:'Tipo de Sondaje', diametro:'Diámetro',
+  fase:'Fase', ubicacion:'Ubicación', azimuth:'Azimuth (°)', dip:'Dip (°)',
+  geologo:'Geólogo', tecnico:'Técnico Geología', cliente:'Cliente',
+  compania:'Compañía', empresa_perf:'Empresa Perforación',
+  metodo_top:'Método Topográfico', coord_tipo:'Tipo Coord.', coord_grid:'Grid/Datum',
+  lito:'Litología (Lito1/2/Mod)', ore_zone:'Ore Zone',
+  color:'Color', intensidad:'Intensidad de Color', contacto:'Contacto',
+  granulometria:'Granulometría', fosiles:'Fósiles',
+  tipo_muestra:'Tipo de Muestra', tipo_control:'Tipo de Control',
+};
+
+/* ═══════════════════════════════════════════
+   GLOBAL STATE
+═══════════════════════════════════════════ */
+let LISTS = {};
+let HOLES = {};
+let USERS = {};          // { loginId: {name, pwd, role, active} }
+let activeHole = null;
+let currentUser = null;
+let currentRole = null;
+let actLog = [];
+
+/* ═══════════════════════════════════════════
+   DEFAULT USERS
+═══════════════════════════════════════════ */
+const DEFAULT_USERS = {
+  'admin': { name: 'Administrador', pwd: '1234', role: 'admin', active: true },
+  'mzamora': { name: 'Miguel Zamora', pwd: 'geo123', role: 'geologo', active: true },
+  'jbancayan': { name: 'Jimmy Bancayan', pwd: 'geo123', role: 'geologo', active: true },
+  'kdelrosario': { name: 'Kathleen Del Rosario', pwd: 'geo123', role: 'geologo', active: true },
+};
+
+/* ═══════════════════════════════════════════
+   PERSISTENCE (localStorage)
+═══════════════════════════════════════════ */
+const LS_LISTS = 'clog_lists_v2';
+const LS_HOLES = 'clog_holes_v2';
+const LS_LOG   = 'clog_log_v2';
+const LS_USERS = 'clog_users_v2';
+
+function persist() {
+  try {
+    localStorage.setItem(LS_LISTS, JSON.stringify(LISTS));
+    localStorage.setItem(LS_HOLES, JSON.stringify(HOLES));
+    localStorage.setItem(LS_LOG,   JSON.stringify(actLog));
+    localStorage.setItem(LS_USERS, JSON.stringify(USERS));
+  } catch(e) { console.warn('localStorage full', e); }
+}
+
+function loadPersisted() {
+  try {
+    const ls = localStorage.getItem(LS_LISTS);
+    LISTS = ls ? JSON.parse(ls) : JSON.parse(JSON.stringify(DEFAULT_LISTS));
+    const lh = localStorage.getItem(LS_HOLES);
+    HOLES = lh ? JSON.parse(lh) : {};
+    const ll = localStorage.getItem(LS_LOG);
+    actLog = ll ? JSON.parse(ll) : [];
+    const lu = localStorage.getItem(LS_USERS);
+    USERS = lu ? JSON.parse(lu) : JSON.parse(JSON.stringify(DEFAULT_USERS));
+  } catch(e) {
+    LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+    HOLES = {}; actLog = [];
+    USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+  }
+}
+
+/* ═══════════════════════════════════════════
+   AUTH — USER LIST BASED
+═══════════════════════════════════════════ */
+function populateLoginDropdown() {
+  const sel = document.getElementById('loginUserSel');
+  sel.innerHTML = '<option value="">— Seleccionar usuario —</option>';
+  Object.keys(USERS).forEach(uid => {
+    const u = USERS[uid];
+    if (!u.active) return;
+    const opt = new Option(u.name + (u.role === 'admin' ? ' ★' : ''), uid);
+    sel.appendChild(opt);
+  });
+}
+
+function onLoginUserChange() {
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginPwd').value = '';
+}
+
+function doLogin() {
+  const uid = document.getElementById('loginUserSel').value;
+  const pwd = document.getElementById('loginPwd').value;
+  const err = document.getElementById('loginErr');
+
+  if (!uid) { err.textContent = 'Selecciona un usuario.'; return; }
+  const u = USERS[uid];
+  if (!u) { err.textContent = 'Usuario no encontrado.'; return; }
+  if (!u.active) { err.textContent = 'Usuario desactivado. Contacta al admin.'; return; }
+  if (u.pwd !== pwd) { err.textContent = 'Contraseña incorrecta.'; return; }
+
+  currentUser = u.name;
+  currentRole = u.role;
+  document.getElementById('userLabel').textContent = u.name;
+  document.getElementById('userAvatar').textContent = u.name.charAt(0).toUpperCase();
+  document.getElementById('adminUserChip').textContent = u.name + ' · ' + u.role;
+  closeModal('loginModal');
+  document.getElementById('holeSelectorBar').style.display = 'flex';
+  if (u.role === 'admin') {
+    document.getElementById('tab-admin').style.display = '';
+    document.getElementById('btnClearLog').style.display = '';
+  }
+  addLog('LOGIN', '—', 'Inicio de sesión como ' + u.role + ' (' + uid + ')');
+  rebuildHoleDropdown();
+  populateAllSelects();
+  populateListSelector();
+  renderLogUI();
+  renderHoleListAdmin();
+  renderUserPreview();
+  const keys = Object.keys(HOLES);
+  if (keys.length > 0) loadHole(keys[keys.length - 1]);
+  toast('Bienvenido, ' + u.name, 'ok');
+}
+
+function doLogout() {
+  addLog('LOGOUT', activeHole || '—', 'Cierre de sesión');
+  persist();
+  location.reload();
+}
+
+function toggleUserMenu() {
+  if (currentRole === 'admin') switchTab('admin');
+}
+
+/* ═══════════════════════════════════════════
+   LOG
+═══════════════════════════════════════════ */
+function addLog(action, hole, detail) {
+  const entry = {
+    ts: new Date().toISOString(),
+    user: currentUser || '?',
+    hole: hole || activeHole || '—',
+    action: detail ? action + ': ' + detail : action
+  };
+  actLog.unshift(entry);
+  if (actLog.length > 500) actLog = actLog.slice(0, 500);
+  renderLogUI();
+  updateBadge('log', actLog.length);
+}
+
+function renderLogUI() {
+  const c = document.getElementById('logContainer');
+  c.innerHTML = actLog.slice(0, 200).map(e => `
+    <div class="log-row">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e.ts.replace('T',' ').slice(0,19)}</div>
+      <div style="font-weight:700;color:var(--accent)">${e.user}</div>
+      <div style="font-family:var(--mono);color:var(--text2);font-size:10px">${e.hole}</div>
+      <div>${e.action}</div>
+    </div>`).join('');
+  updateBadge('log', actLog.length);
+}
+
+function clearLog() {
+  if (!confirm('¿Limpiar todo el log de actividad?')) return;
+  actLog = []; persist(); renderLogUI();
+  toast('Log limpiado', 'warn');
+}
+
+function exportLog() {
+  const csv = ['Fecha,Usuario,Sondaje,Accion']
+    .concat(actLog.map(e => `"${e.ts}","${e.user}","${e.hole}","${e.action}"`)).join('\r\n');
+  dlFile(csv, 'log_actividad.csv');
+}
+
+/* ═══════════════════════════════════════════
+   HOLE MANAGEMENT
+═══════════════════════════════════════════ */
+function openNewHoleModal() {
+  populateSelect('nh_proj', LISTS.proyecto || []);
+  populateSelect('nh_tipo', LISTS.tipo_sondaje || []);
+  populateSelect('nh_diam', LISTS.diametro || []);
+  openModal('newHoleModal');
+}
+
+function createNewHole() {
+  const id = document.getElementById('nh_id').value.trim();
+  if (!id) { document.getElementById('nhErr').textContent = 'Campo requerido.'; return; }
+  if (HOLES[id]) { document.getElementById('nhErr').textContent = 'Ya existe ese sondaje.'; return; }
+  HOLES[id] = {
+    header: {
+      'Hole number': id,
+      Project: document.getElementById('nh_proj').value,
+      'Tipo de Sondaje': document.getElementById('nh_tipo').value,
+      Diametro: document.getElementById('nh_diam').value,
+    },
+    marcacion: [], geologia: [], muestreo: [], densidad: []
+  };
+  persist();
+  addLog('CREAR SONDAJE', id, 'Sondaje creado');
+  closeModal('newHoleModal');
+  rebuildHoleDropdown();
+  loadHole(id);
+  renderHoleListAdmin();
+  toast('Sondaje ' + id + ' creado', 'ok');
+}
+
+function rebuildHoleDropdown() {
+  const sel = document.getElementById('holeSelectorDropdown');
+  sel.innerHTML = '<option value="">— Seleccionar sondaje —</option>';
+  Object.keys(HOLES).forEach(id => {
+    const opt = document.createElement('option');
+    opt.value = id; opt.textContent = id;
+    sel.appendChild(opt);
+  });
+  if (activeHole) sel.value = activeHole;
+}
+
+function loadHole(id) {
+  if (!id || !HOLES[id]) return;
+  activeHole = id;
+  document.getElementById('holeSelectorDropdown').value = id;
+  document.getElementById('topHoleBadge').textContent = id;
+  // populate header form
+  const h = HOLES[id].header || {};
+  setVal('h_holenum', h['Hole number'] || id);
+  setVal('h_project',  h.Project || '');
+  setVal('h_fase',     h.Fase || '');
+  setVal('h_tipo',     h['Tipo de Sondaje'] || '');
+  setVal('h_diam',     h.Diametro || '');
+  setVal('h_ubic',     h['Ubicación'] || '');
+  setVal('h_plat',     h.Plataforma || '');
+  setVal('h_az',       h.Azimuth || '');
+  setVal('h_dip',      h.Dip || '');
+  setVal('h_prof',     h.Profundidad || '');
+  setVal('h_completed',h['Is Completed'] || 'N');
+  setVal('h_geologo',  h.Geologo || '');
+  setVal('h_tec',      h['Tecnico Geologia'] || '');
+  setVal('h_cliente',  h.Cliente || '');
+  setVal('h_cia',      h['Compañía'] || '');
+  setVal('h_epf',      h['Empresa Perforacion'] || '');
+  setVal('h_inicio',   h.Inicio || '');
+  setVal('h_fin',      h.Fin || '');
+  setVal('h_fing',     h['Fecha de Ingreso'] || '');
+  setVal('h_cajas',    h['Numero Cajas'] || '');
+  setVal('c_type',     h['coord.Type'] || '');
+  setVal('c_grid',     h['coord.Grid'] || '');
+  setVal('c_north',    h['coord.Northing'] || '');
+  setVal('c_east',     h['coord.Easting'] || '');
+  setVal('c_elev',     h['coord.Elevation'] || '');
+  setVal('h_metodo_top',h['Metodo Topografico'] || '');
+  setVal('h_comments', h.Comentarios || '');
+  // load interval tables
+  loadIntervalTable('bodyMarc', HOLES[id].marcacion || [], 'marcacion');
+  loadIntervalTable('bodyGeo',  HOLES[id].geologia  || [], 'geologia');
+  loadIntervalTable('bodyMue',  HOLES[id].muestreo  || [], 'muestreo');
+  loadIntervalTable('bodyDens', HOLES[id].densidad  || [], 'densidad');
+  updateDepthBars();
+  addLog('CARGAR', id, 'Sondaje cargado en pantalla');
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.tagName === 'SELECT') {
+    // try to match existing option, else add temporary
+    let found = false;
+    for (let o of el.options) if (o.value === val) { found = true; break; }
+    if (!found && val) {
+      const opt = new Option(val, val); el.appendChild(opt);
+    }
+    el.value = val;
+  } else {
+    el.value = val;
+  }
+}
+
+function loadIntervalTable(tbodyId, rows, section) {
+  const tb = document.getElementById(tbodyId);
+  tb.innerHTML = '';
+  rows.forEach(r => {
+    if (section === 'marcacion') addMarcRow(r);
+    else if (section === 'geologia') addGeoRow(r);
+    else if (section === 'muestreo') addMueRow(r);
+    else if (section === 'densidad') addDensRow(r);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   POPULATE SELECTS
+═══════════════════════════════════════════ */
+function populateSelect(id, items, includeEmpty=true) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const cur = el.value;
+  el.innerHTML = '';
+  if (includeEmpty) el.appendChild(new Option('', ''));
+  items.forEach(v => el.appendChild(new Option(v, v)));
+  if (cur) setVal(id, cur);
+}
+
+function populateAllSelects() {
+  populateSelect('h_project',    LISTS.proyecto,    false);
+  populateSelect('h_fase',       LISTS.fase);
+  populateSelect('h_tipo',       LISTS.tipo_sondaje, false);
+  populateSelect('h_diam',       LISTS.diametro,    false);
+  populateSelect('h_ubic',       LISTS.ubicacion);
+  populateSelect('h_az',         LISTS.azimuth);
+  populateSelect('h_dip',        LISTS.dip);
+  populateSelect('h_geologo',    LISTS.geologo);
+  populateSelect('h_tec',        LISTS.tecnico);
+  populateSelect('h_cliente',    LISTS.cliente);
+  populateSelect('h_cia',        LISTS.compania);
+  populateSelect('h_epf',        LISTS.empresa_perf);
+  populateSelect('h_metodo_top', LISTS.metodo_top);
+  populateSelect('c_type',       LISTS.coord_tipo, false);
+  populateSelect('c_grid',       LISTS.coord_grid, false);
+  populateSelect('nh_proj',      LISTS.proyecto, false);
+  populateSelect('nh_tipo',      LISTS.tipo_sondaje, false);
+  populateSelect('nh_diam',      LISTS.diametro, false);
+}
+
+/* ═══════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════ */
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'admin') { renderHoleListAdmin(); renderListEditor(); }
+  if (name === 'log') renderLogUI();
+  if (name === 'instrucciones' || name === 'creditos') renderLegends();
+}
+
+/* ═══════════════════════════════════════════
+   BADGES & STATUS
+═══════════════════════════════════════════ */
+function updateBadge(name, n) {
+  const el = document.getElementById('badge-' + name);
+  if (!el) return;
+  el.textContent = n;
+  el.className = 'badge' + (n > 0 ? ' live' : '');
+  if (name === 'marcacion') document.getElementById('stMarc').textContent = n;
+  if (name === 'geologia')  document.getElementById('stGeo').textContent  = n;
+  if (name === 'muestreo')  document.getElementById('stMue').textContent  = n;
+}
+
+function setStatus(msg, type='ok') {
+  document.getElementById('stMsg').textContent = msg;
+  document.getElementById('stDot').className = 'st-dot' + (type !== 'ok' ? ' warn' : '');
+}
+
+/* ═══════════════════════════════════════════
+   DEPTH BARS
+═══════════════════════════════════════════ */
+function updateDepthBars() {
+  const target = parseFloat(document.getElementById('h_prof').value) || 0;
+  // All interval tables: col1=#, col2=From, col3=To
+  const marcMax = tableMaxCol('bodyMarc', 3);
+  const geoMax  = tableMaxCol('bodyGeo',  3);
+  const mueMax  = tableMaxCol('bodyMue',  4);  // mue: col1=#, col2=OZ, col3=From, col4=To
+  setDepth('marc', marcMax, target, 'marcStatus');
+  setDepth('geo',  geoMax,  target, 'geoStatus');
+  setDepth('mue',  mueMax,  target, 'mueStatus');
+}
+
+function tableMaxCol(tbodyId, colIdx) {
+  let max = 0;
+  document.querySelectorAll('#' + tbodyId + ' tr').forEach(tr => {
+    const inp = tr.querySelector(`td:nth-child(${colIdx}) input`);
+    const v = parseFloat(inp?.value) || 0;
+    if (v > max) max = v;
+  });
+  return max;
+}
+
+/* ═══════════════════════════════════════════
+   PRINT SAMPLING PLAN
+═══════════════════════════════════════════ */
+function printSamplingPlan() {
+  const hole = document.getElementById('h_holenum').value.trim() || activeHole || 'SONDAJE';
+  const geo  = document.getElementById('h_geologo').value || '—';
+  const fecha = new Date().toLocaleDateString('es-PE', {day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const rows = [];
+  document.querySelectorAll('#bodyMue tr').forEach(tr => {
+    const oz    = tr.querySelector('td.symb-cell .symb-oz')?.textContent?.trim() || '';
+    const from  = tr.querySelector('td:nth-child(3) input')?.value || '';
+    const to    = tr.querySelector('td:nth-child(4) input')?.value || '';
+    const len   = tr.querySelector('td:nth-child(5)')?.textContent?.trim() || '';
+    const num   = tr.querySelector('td:nth-child(6) input')?.value || '';
+    const tipo  = tr.querySelector('td:nth-child(7) select')?.value || '';
+    const ctrl  = tr.querySelector('td:nth-child(8) select')?.value || '';
+    const fMue  = tr.querySelector('td:nth-child(10) input')?.value || '';
+    const peso  = tr.querySelector('td:nth-child(11) input')?.value || '';
+    const padre = tr.querySelector('td:nth-child(12) input')?.value || '';
+    const obs   = tr.querySelector('td:nth-child(13) input')?.value || '';
+    const color = ['TWS','DUP','CDP','PDS'].includes(tipo) ? '#fff8e1' : tipo === 'Control' ? '#e8f5e9' : '#fff';
+    rows.push({ oz, from, to, len, num, tipo, ctrl, fMue, peso, padre, obs, color });
+  });
+
+  if (!rows.length) { toast('No hay muestras para exportar.', 'warn'); return; }
+
+  const rowsHtml = rows.map((r, i) => `
+    <tr style="background:${r.color}">
+      <td style="text-align:center">${i+1}</td>
+      <td><span style="display:inline-block;background:${ozColor(r.oz)};color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">${r.oz||'—'}</span></td>
+      <td style="font-family:monospace">${r.from}</td>
+      <td style="font-family:monospace">${r.to}</td>
+      <td style="font-family:monospace;text-align:center">${r.len}</td>
+      <td style="font-weight:700">${r.num}</td>
+      <td><span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${r.tipo==='PRI'?'#e3f2fd':r.tipo==='Control'?'#e8f5e9':'#fff8e1'}">${r.tipo}</span></td>
+      <td>${r.ctrl}</td>
+      <td>${r.fMue}</td>
+      <td style="text-align:right">${r.peso}</td>
+      <td>${r.padre}</td>
+      <td>${r.obs}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Plan de Muestreo — ${hole}</title>
+<style>
+  @page { size: A4 landscape; margin: 15mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1a1d28; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2.5px solid #1a5f9e; }
+  .title-block h1 { font-size: 16px; font-weight: 900; color: #1a5f9e; }
+  .title-block p  { font-size: 11px; color: #4a5068; margin-top: 2px; }
+  .meta-grid { display: flex; gap: 20px; font-size: 11px; }
+  .meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .meta-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #8a90a8; }
+  .meta-val   { font-weight: 700; color: #1a1d28; font-family: monospace; }
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  thead th { background: #1a5f9e; color: #fff; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding: 5px 6px; text-align: left; white-space: nowrap; }
+  tbody td { border: 1px solid #d8dce6; padding: 4px 6px; vertical-align: middle; }
+  tbody tr:nth-child(even) td { filter: brightness(0.97); }
+  .footer { margin-top: 10px; font-size: 9px; color: #8a90a8; display: flex; justify-content: space-between; }
+  .legend { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; font-size: 10px; }
+  .leg-item { display: flex; align-items: center; gap: 5px; }
+  .leg-swatch { width: 14px; height: 10px; border-radius: 2px; }
+  @media print {
+    .no-print { display: none; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title-block">
+    <h1>⬡ PLAN DE MUESTREO</h1>
+    <p>Geología — Cía. Minera Miski Mayo · Yacimiento Bayóvar</p>
+  </div>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="meta-label">Sondaje</span><span class="meta-val">${hole}</span></div>
+    <div class="meta-item"><span class="meta-label">Geólogo</span><span class="meta-val">${geo}</span></div>
+    <div class="meta-item"><span class="meta-label">Fecha impresión</span><span class="meta-val">${fecha}</span></div>
+    <div class="meta-item"><span class="meta-label">N° Muestras</span><span class="meta-val">${rows.length}</span></div>
+    <div class="meta-item"><span class="meta-label">PRI</span><span class="meta-val">${rows.filter(r=>r.tipo==='PRI').length}</span></div>
+    <div class="meta-item"><span class="meta-label">Controles</span><span class="meta-val">${rows.filter(r=>r.tipo==='Control').length}</span></div>
+    <div class="meta-item"><span class="meta-label">Duplicados</span><span class="meta-val">${rows.filter(r=>['TWS','DUP','CDP','PDS'].includes(r.tipo)).length}</span></div>
+  </div>
+</div>
+
+<table>
+  <thead><tr>
+    <th>#</th><th>Ore Zone</th><th>From (m)</th><th>To (m)</th><th>Long (m)</th>
+    <th>N° Muestra</th><th>Tipo</th><th>Control</th>
+    <th>Fecha Muestreo</th><th>Peso (g)</th><th>Mtra Padre</th><th>Observaciones</th>
+  </tr></thead>
+  <tbody>${rowsHtml}</tbody>
+</table>
+
+<div class="legend">
+  <strong>Leyenda tipo:</strong>
+  <div class="leg-item"><div class="leg-swatch" style="background:#e3f2fd;border:1px solid #90caf9"></div> PRI - Principal</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#e8f5e9;border:1px solid #a5d6a7"></div> Control (CBK/CRM)</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#fff8e1;border:1px solid #ffe082"></div> Duplicado (TWS/DUP/CDP/PDS)</div>
+</div>
+
+<div class="footer">
+  <span>OreLogic S.A. — Sistema de Core Logging v3.0 — Implementación de Prueba CMMM</span>
+  <span>Generado: ${new Date().toISOString().replace('T',' ').slice(0,19)}</span>
+</div>
+
+<div class="no-print" style="margin-top:20px;text-align:center">
+  <button onclick="window.print()" style="background:#1a5f9e;color:#fff;border:none;border-radius:6px;padding:10px 30px;font-size:14px;font-weight:700;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="background:#eef0f4;color:#4a5068;border:1.5px solid #d8dce6;border-radius:6px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;margin-left:10px">✕ Cerrar</button>
+</div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=1100,height=800');
+  if (!w) { toast('Permite ventanas emergentes para imprimir.', 'warn'); return; }
+  w.document.write(html);
+  w.document.close();
+  addLog('IMPRIMIR PLAN', activeHole, `${rows.length} muestras`);
+}
+
+function tableMax(tbodyId, colIdx) {
+  let max = 0;
+  document.querySelectorAll('#' + tbodyId + ' tr').forEach(tr => {
+    const inp = tr.querySelector(`td:nth-child(${colIdx}) input`);
+    const v = parseFloat(inp?.value) || 0;
+    if (v > max) max = v;
+  });
+  return max;
+}
+
+function setDepth(pfx, cur, target, statusId) {
+  const pct = target > 0 ? Math.min(100, cur / target * 100) : 0;
+  document.getElementById(pfx + 'Fill').style.width = pct + '%';
+  document.getElementById(pfx + 'Pct').textContent =
+    cur.toFixed(2) + ' / ' + (target > 0 ? target.toFixed(2) : '—') + ' m (' + pct.toFixed(1) + '%)';
+  const st = document.getElementById(statusId);
+  if (!st) return;
+  if (target > 0 && Math.abs(cur - target) < 0.01) {
+    st.className = 'chip ok'; st.textContent = '✓ Completo';
+  } else if (cur > 0 && target > 0 && cur < target) {
+    st.className = 'chip warn'; st.textContent = '↻ Incompleto';
+  } else {
+    st.className = 'chip'; st.textContent = '';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   INTERVAL VALIDATION: no gaps, no overlaps
+═══════════════════════════════════════════ */
+function validateIntervals(tbodyId, bannerIdPrefix) {
+  const rows = document.querySelectorAll('#' + tbodyId + ' tr');
+  const banner = document.getElementById(bannerIdPrefix + 'ErrBanner');
+  const errors = [];
+  let prevTo = null;
+
+  rows.forEach((tr, i) => {
+    // Col 1 = row#, Col 2 = From, Col 3 = To
+    const fromEl = tr.querySelector('td:nth-child(2) input');
+    const toEl   = tr.querySelector('td:nth-child(3) input');
+    if (!fromEl || !toEl) return;
+    const from = parseFloat(fromEl.value);
+    const to   = parseFloat(toEl.value);
+
+    tr.classList.remove('row-error', 'row-warn');
+
+    if (isNaN(from) || isNaN(to)) return;
+    if (to <= from) {
+      errors.push(`Fila ${i+1}: To (${to}) debe ser mayor que From (${from}).`);
+      tr.classList.add('row-error');
+    }
+    if (prevTo !== null) {
+      if (Math.abs(from - prevTo) > 0.001) {
+        errors.push(`Fila ${i+1}: From (${from}) no coincide con To anterior (${prevTo.toFixed(2)}).`);
+        tr.classList.add('row-warn');
+      }
+      if (from < prevTo - 0.001) {
+        errors.push(`Fila ${i+1}: Solapamiento detectado (From ${from} < To anterior ${prevTo.toFixed(2)}).`);
+        tr.classList.add('row-error');
+      }
+    }
+    if (!isNaN(to)) prevTo = to;
+  });
+
+  if (banner) {
+    banner.innerHTML = errors.length > 0 ? '⚠️ ' + errors.join('<br>⚠️ ') : '';
+    banner.className = 'err-banner' + (errors.length > 0 ? ' show' : '');
+  }
+  return errors.length === 0;
+}
+
+/* ═══════════════════════════════════════════
+   MARCACIÓN TABLE
+═══════════════════════════════════════════ */
+/* ── shared row-number cell (always col 1) ── */
+function rowNumCell(n) {
+  return `<td class="rn-cell" style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3);padding:4px 6px;width:32px">${n+1}</td>`;
+}
+/* renumber all rows in a tbody after insert/delete */
+function renumberRows(tbodyId) {
+  document.querySelectorAll('#'+tbodyId+' tr').forEach((tr, i) => {
+    const rn = tr.querySelector('td.rn-cell');
+    if (rn) rn.textContent = i+1;
+  });
+}
+
+function addMarcRow(data={}) {
+  const tb  = document.getElementById('bodyMarc');
+  const idx = tb.rows.length;
+  const prevTo = getLastTo('bodyMarc');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    ${rowNumCell(idx)}
+    <td><input type="number" value="${data.From ?? (prevTo ?? '')}" step="0.01" min="0" oninput="onMarcInput(this)"></td>
+    <td><input type="number" value="${data.To ?? ''}" step="0.01" min="0" oninput="onMarcInput(this)"></td>
+    <td class="computed" id="mlen${idx}">—</td>
+    <td><input type="number" value="${data['Rec m']??''}" step="0.01" min="0" oninput="onMarcInput(this)"></td>
+    <td class="computed" id="mrpct${idx}">—</td>
+    <td><input type="number" value="${data['Rec Geo']??''}" step="0.01" min="0" oninput="onMarcInput(this)"></td>
+    <td class="computed" id="mrgpct${idx}">—</td>
+    <td><input type="text" value="${data.Comments??''}" placeholder=""></td>
+    <td class="td-act"><button class="btn-icon" onclick="delRow(this,'bodyMarc','marcacion')" title="Eliminar">✕</button></td>`;
+  tb.appendChild(tr);
+  recalcMarcRow(tr, idx);
+  updateBadge('marcacion', tb.rows.length);
+  updateDepthBars();
+  validateIntervals('bodyMarc', 'marc');
+}
+
+function onMarcInput(inp) {
+  const tr  = inp.closest('tr');
+  const idx = Array.from(tr.parentNode.rows).indexOf(tr);
+  recalcMarcRow(tr, idx);
+  validateIntervals('bodyMarc', 'marc');
+  updateDepthBars();
+}
+
+function recalcMarcRow(tr, idx) {
+  // #=col1, From=col2, To=col3, Len=col4, RecM=col5, Rec%=col6, RecGeo=col7, RecGeo%=col8, Comments=col9
+  const from = parseFloat(tr.querySelector('td:nth-child(2) input').value) || 0;
+  const to   = parseFloat(tr.querySelector('td:nth-child(3) input').value) || 0;
+  const len  = to - from;
+  const recM = parseFloat(tr.querySelector('td:nth-child(5) input').value) || 0;
+  const recG = parseFloat(tr.querySelector('td:nth-child(7) input').value) || 0;
+  const lc   = document.getElementById('mlen'  + idx);
+  const rp   = document.getElementById('mrpct' + idx);
+  const gp   = document.getElementById('mrgpct'+ idx);
+  if (lc) { lc.textContent = len > 0 ? len.toFixed(3) : '—'; lc.className = 'computed' + (len <= 0 ? ' bad' : ''); }
+  if (rp) rp.textContent = len > 0 ? (recM / len * 100).toFixed(2) + '%' : '—';
+  if (gp) gp.textContent = len > 0 ? (recG / len * 100).toFixed(2) + '%' : '—';
+}
+
+function autoFillMarcacion() {
+  const depth = parseFloat(document.getElementById('h_prof').value);
+  if (!depth || depth <= 0) { toast('Ingresa primero la profundidad en Header', 'warn'); return; }
+  document.getElementById('bodyMarc').innerHTML = '';
+  let cur = 0;
+  while (cur < depth - 0.001) {
+    const nxt = Math.min(+(cur + 1.5).toFixed(3), +depth.toFixed(3));
+    addMarcRow({ From: cur.toFixed(3), To: nxt.toFixed(3), 'Rec m': (nxt - cur).toFixed(3), 'Rec Geo': (nxt - cur).toFixed(3) });
+    cur = nxt;
+  }
+  toast('Marcación generada automáticamente');
+}
+
+/* ═══════════════════════════════════════════
+   GEOLOGY SYMBOLOGY MAPS
+═══════════════════════════════════════════ */
+const LITO_COLORS = {
+  ARN:'#c8a050', ARE:'#e0c870', ACL:'#b07038', DAR:'#806830',
+  DIF:'#8090b0', DIS:'#a0b0d0', FOS:'#60a878', TUF:'#9890c0',
+  '':'#cccccc'
+};
+const OZ_COLORS = {
+  SAR:'#e8d080', SDI_0:'#b0c8e0', SDI_1A:'#90b4d8', SDI_1B:'#78a0cc',
+  SDI_1C:'#608cc0', SDI_1D:'#4878b4', SDI_1E:'#3064a8', SDI_1F:'#18509c',
+  SDI_1G:'#1040 90', SDI_2:'#7898c0', CA0:'#d4a0c8', CA1:'#c878b8',
+  CA2:'#bc50a8', CA3:'#b02898', CA4:'#941884', CA5:'#780870',
+  I12:'#e8b878', I23:'#e8a060', I23A:'#e89050', I23B:'#e88040',
+  I34:'#e87030', I45:'#e86020', I45B:'#e85010', I56:'#e84000',
+  CLA:'#b8b890', UF23_1:'#d0c0a0', UF23_2:'#c8b898', UF45:'#c0b090',
+  '':'#e0e0e0'
+};
+
+function litoColor(code) { return LITO_COLORS[code] || '#aaaaaa'; }
+function ozColor(code)   { return OZ_COLORS[code]   || '#bbbbcc'; }
+
+function makeSymbCell(lito, oz) {
+  const oc = ozColor(oz);
+  return `<td class="symb-cell">
+    <div class="symb-wrap">
+      <div class="symb-oz" style="background:${oc};height:20px;width:56px;border-radius:3px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.5)" title="${oz||'—'}">${oz||'—'}</div>
+    </div>
+  </td>`;
+}
+
+/* ═══════════════════════════════════════════
+   GEOLOGÍA TABLE
+═══════════════════════════════════════════ */
+function addGeoRow(data={}) {
+  const tb  = document.getElementById('bodyGeo');
+  const idx = tb.rows.length;
+  const prevTo = getLastTo('bodyGeo');
+  const L = LISTS;
+  const mkSel = (list, val, extra='') => {
+    const opts = ['', ...(L[list] || [])].map(o =>
+      `<option value="${o}" ${o===val?'selected':''}>${o||'—'}</option>`).join('');
+    return `<select ${extra}>${opts}</select>`;
+  };
+  const ynopts = (val) => ['Y','N'].map(o => `<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
+  const tr = document.createElement('tr');
+  const lito = data['Lito 1'] || '';
+  const oz   = data['Ore Zone'] || '';
+  tr.innerHTML = `
+    ${rowNumCell(idx)}
+    <td><input type="number" value="${data.From??(prevTo??'')}" step="0.01" oninput="onGeoInput(this)"></td>
+    <td><input type="number" value="${data.To??''}" step="0.01" oninput="onGeoInput(this)"></td>
+    <td class="computed" id="glen${idx}">—</td>
+    ${makeSymbCell(lito, oz)}
+    <td>${mkSel('lito', lito, 'onchange="autoLitoMod(this);updateGeoSymb(this)"')}</td>
+    <td>${mkSel('lito', data['LitoMod']||'')}</td>
+    <td>${mkSel('ore_zone', oz, 'onchange="updateGeoSymb(this)"')}</td>
+    <td>${mkSel('ore_zone', data['Ore Zone Mod']||'')}</td>
+    <td>${mkSel('color', data['Color']||'')}</td>
+    <td>${mkSel('intensidad', data['Intensidad de Color']||'')}</td>
+    <td>${mkSel('contacto', data['Contacto']||'')}</td>
+    <td>${mkSel('granulometria', data['Granulometria']||'')}</td>
+    <td><input type="text" value="${data['Fosiles']??'NVI'}" style="min-width:55px"></td>
+    <td><select>${ynopts(data['Tomar Densidad?']||'Y')}</select></td>
+    <td><select>${ynopts(data['Se Muestrea?']||'N')}</select></td>
+    <td><select>${ynopts(data['Circuito?']||'N')}</select></td>
+    <td><input type="number" value="${data['% Vlls']??'0'}" step="1" min="0" max="100" style="min-width:45px"></td>
+    <td><input type="text" value="${data['Descripcion']??''}" style="min-width:100px"></td>
+    <td class="td-act"><button class="btn-icon" onclick="delRow(this,'bodyGeo','geologia')" title="Eliminar">✕</button></td>`;
+  tb.appendChild(tr);
+  recalcGeoLen(tr, idx);
+  updateBadge('geologia', tb.rows.length);
+  updateDepthBars();
+  validateIntervals('bodyGeo', 'geo');
+}
+
+function updateGeoSymb(sel) {
+  const tr = sel.closest('tr');
+  // #=1, From=2, To=3, Len=4, symb=5, Lito1=6, LitoMod=7, OZ=8
+  const oz = tr.querySelector('td:nth-child(8) select')?.value || '';
+  const cell = tr.querySelector('td.symb-cell');
+  if (cell) {
+    const oc = ozColor(oz);
+    cell.innerHTML = `<div class="symb-wrap">
+      <div class="symb-oz" style="background:${oc};height:20px;width:56px;border-radius:3px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.5)" title="${oz||'—'}">${oz||'—'}</div>
+    </div>`;
+  }
+}
+
+function autoLitoMod(sel) {
+  const tr = sel.closest('tr');
+  const litoMod = tr.querySelector('td:nth-child(7) select');  // LitoMod is col7
+  if (litoMod && !litoMod.value) litoMod.value = sel.value;
+  updateGeoSymb(sel);
+}
+
+function onGeoInput(inp) {
+  const tr  = inp.closest('tr');
+  const idx = Array.from(tr.parentNode.rows).indexOf(tr);
+  recalcGeoLen(tr, idx);
+  validateIntervals('bodyGeo', 'geo');
+  updateDepthBars();
+}
+
+function recalcGeoLen(tr, idx) {
+  // #=col1, From=col2, To=col3
+  const from = parseFloat(tr.querySelector('td:nth-child(2) input').value) || 0;
+  const to   = parseFloat(tr.querySelector('td:nth-child(3) input').value) || 0;
+  const el   = document.getElementById('glen' + idx);
+  if (el) { el.textContent = to > from ? (to - from).toFixed(3) : '—'; el.className = 'computed' + (to <= from ? ' bad' : ''); }
+}
+
+/* ═══════════════════════════════════════════
+   MUESTREO TABLE
+═══════════════════════════════════════════ */
+function addMueRow(data={}) {
+  const tb  = document.getElementById('bodyMue');
+  const idx = tb.rows.length;
+  const L   = LISTS;
+  const mkSel = (list, val, extra='') => {
+    const opts = ['', ...(L[list]||[])].map(o =>
+      `<option value="${o}" ${o===val?'selected':''}>${o||'—'}</option>`).join('');
+    return `<select ${extra}>${opts}</select>`;
+  };
+  const tipo = data['Tipo de Muestra'] || 'PRI';
+  const oz   = data['Ore Zone'] || '';
+  const oc   = ozColor(oz);
+  const tr   = document.createElement('tr');
+  tr.innerHTML = `
+    ${rowNumCell(idx)}
+    <td class="symb-cell" style="min-width:62px"><div class="symb-oz" style="background:${oc};height:20px;width:56px;border-radius:3px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.5)">${oz||'—'}</div></td>
+    <td><input type="number" value="${data.From??''}" step="0.01" oninput="onMueInput(this)"></td>
+    <td><input type="number" value="${data.To??''}" step="0.01" oninput="onMueInput(this)"></td>
+    <td class="computed" id="mulen${idx}">—</td>
+    <td><input type="text" value="${data['Numero Muestra']??''}" placeholder="BAY-26-DH-XXXX-###" style="min-width:155px"></td>
+    <td>${mkSel('tipo_muestra', tipo, 'onchange="onMueTipoChange(this)"')}</td>
+    <td>${mkSel('tipo_control', data['Tipo de Control']||'')}</td>
+    <td><select><option ${(data['Control Granulometria?']||'N')==='N'?'selected':''} value="N">N</option><option value="Y" ${data['Control Granulometria?']==='Y'?'selected':''}>Y</option></select></td>
+    <td><input type="date" value="${data['Fecha Muestreo']??''}"></td>
+    <td><input type="number" value="${data['Peso Muestra']??''}" step="0.1" min="0"></td>
+    <td><input type="text" value="${data['parent sample number']??''}" style="min-width:140px"></td>
+    <td><input type="text" value="${(data['Comentarios ']||data['Comentarios'])||''}"></td>
+    <td class="td-act"><button class="btn-icon" onclick="delRow(this,'bodyMue','muestreo')" title="Eliminar">✕</button></td>`;
+  tb.appendChild(tr);
+  // recalcMueLen now reads cols 2 (From) and 3 (To)
+  recalcMueLen(tr, idx);
+  updateBadge('muestreo', tb.rows.length);
+  updateDepthBars();
+  validateMuestras();
+}
+
+function onMueInput(inp) {
+  const tr  = inp.closest('tr');
+  const idx = Array.from(tr.parentNode.rows).indexOf(tr);
+  recalcMueLen(tr, idx);
+  validateMuestras();
+  updateDepthBars();
+}
+
+function onMueTipoChange(sel) {
+  validateMuestras();
+}
+
+function recalcMueLen(tr, idx) {
+  // #=col1, OZ=col2, From=col3, To=col4, Length=col5(computed)
+  const from = parseFloat(tr.querySelector('td:nth-child(3) input')?.value) || 0;
+  const to   = parseFloat(tr.querySelector('td:nth-child(4) input')?.value) || 0;
+  const el   = document.getElementById('mulen' + idx);
+  if (el) { el.textContent = to > from ? (to - from).toFixed(3) : '—'; el.className = 'computed' + (to <= from && to !== 0 ? ' bad' : ''); }
+}
+
+function validateMuestras() {
+  // Only check to > from per row; no gap/overlap validation for samples
+  const banner = document.getElementById('mueErrBanner');
+  const errors = [];
+  document.querySelectorAll('#bodyMue tr').forEach((tr, i) => {
+    const from = parseFloat(tr.querySelector('td:nth-child(3) input')?.value);
+    const to   = parseFloat(tr.querySelector('td:nth-child(4) input')?.value);
+    tr.classList.remove('row-error', 'row-warn');
+    if (!isNaN(from) && !isNaN(to) && to > 0 && to <= from) {
+      errors.push(`Fila ${i+1}: To (${to}) debe ser mayor que From (${from}).`);
+      tr.classList.add('row-error');
+    }
+  });
+  if (banner) {
+    banner.innerHTML = errors.length ? '⚠️ ' + errors.join('<br>⚠️ ') : '';
+    banner.className = 'err-banner' + (errors.length ? ' show' : '');
+  }
+}
+
+function autoNumMuestras() {
+  const hole = document.getElementById('h_holenum').value.trim() || 'BAY-26-DH-XXXX';
+  let counter = 1;
+  // First pass: assign numbers to all empty N° Muestra cells (col6)
+  document.querySelectorAll('#bodyMue tr').forEach(tr => {
+    const inp = tr.querySelector('td:nth-child(6) input');  // col6 = N° Muestra
+    if (!inp || inp.value) return;
+    inp.value = hole + '-' + String(counter).padStart(3,'0');
+    counter++;
+  });
+  // Second pass: fill Mtra Padre for DUP/TWS/CDP/PDS
+  // #=1, OZ=2, From=3, To=4, Len=5, N°Muestra=6, Tipo=7, TipoCtrl=8, CtrlGran=9, Fecha=10, Peso=11, MtraPadre=12
+  let lastPRI = '';
+  document.querySelectorAll('#bodyMue tr').forEach(tr => {
+    const tipoSel  = tr.querySelector('td:nth-child(7) select');
+    const numInp   = tr.querySelector('td:nth-child(6) input');
+    const parentInp= tr.querySelector('td:nth-child(12) input');
+    if (!tipoSel || !numInp) return;
+    const tipo = tipoSel.value;
+    if (tipo === 'PRI') {
+      lastPRI = numInp.value;
+    } else if (['TWS','DUP','CDP','PDS'].includes(tipo) && parentInp && !parentInp.value && lastPRI) {
+      parentInp.value = lastPRI;
+    }
+  });
+  toast('Muestras numeradas y Mtra Padre asignada');
+}
+
+/* ═══════════════════════════════════════════
+   IMPORT INTERVALS FROM GEOLOGY (Se Muestrea?=Y)
+═══════════════════════════════════════════ */
+function importFromGeo() {
+  const geoRows = document.querySelectorAll('#bodyGeo tr');
+  if (!geoRows.length) { toast('No hay filas en Geología.', 'warn'); return; }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const toImport = [];
+  geoRows.forEach(tr => {
+    // #=1, From=2, To=3, Len=4, symb=5, Lito1=6, LitoMod=7, OZ=8, OZMod=9,
+    // Color=10, Intens=11, Cont=12, Gran=13, Fosiles=14, Dens?=15, Muestrea?=16
+    const muestreaSel = tr.querySelector('td:nth-child(16) select');
+    if (muestreaSel && muestreaSel.value === 'Y') {
+      const from = tr.querySelector('td:nth-child(2) input')?.value;
+      const to   = tr.querySelector('td:nth-child(3) input')?.value;
+      const oz   = tr.querySelector('td:nth-child(8) select')?.value || '';
+      if (from && to) toImport.push({ From: from, To: to, 'Ore Zone': oz });
+    }
+  });
+
+  if (!toImport.length) {
+    toast('No hay intervalos con "Se Muestrea? = Y" en Geología.', 'warn');
+    return;
+  }
+
+  const existing = new Set();
+  document.querySelectorAll('#bodyMue tr').forEach(tr => {
+    const f = tr.querySelector('td:nth-child(2) input')?.value;
+    const t = tr.querySelector('td:nth-child(3) input')?.value;
+    if (f && t) existing.add(f + '-' + t);
+  });
+
+  let added = 0;
+  toImport.forEach(r => {
+    const key = r.From + '-' + r.To;
+    if (!existing.has(key)) {
+      addMueRow({ From: r.From, To: r.To, 'Ore Zone': r['Ore Zone'], 'Tipo de Muestra': 'PRI', 'Fecha Muestreo': today });
+      existing.add(key);
+      added++;
+    }
+  });
+
+  toast(added > 0 ? `${added} intervalos importados de Geología` : 'Todos los intervalos ya existen en Muestreo', added > 0 ? 'ok' : 'warn');
+  addLog('IMPORTAR GEO→MUE', activeHole, `${added} intervalos importados`);
+}
+
+/* ═══════════════════════════════════════════
+   DUPLICADO MODAL
+═══════════════════════════════════════════ */
+function openDupModal() {
+  const sel = document.getElementById('dupRefSel');
+  sel.innerHTML = '<option value="">— Seleccionar muestra PRI —</option>';
+  document.querySelectorAll('#bodyMue tr').forEach((tr, i) => {
+    const tipo = tr.querySelector('td:nth-child(7) select')?.value;  // col7=Tipo
+    if (tipo && tipo !== 'Control' && tipo !== 'DUP' && tipo !== 'TWS' && tipo !== 'CDP' && tipo !== 'PDS') {
+      const num  = tr.querySelector('td:nth-child(6) input')?.value;   // col6=N°Muestra
+      const from = tr.querySelector('td:nth-child(3) input')?.value;   // col3=From
+      const to   = tr.querySelector('td:nth-child(4) input')?.value;   // col4=To
+      const label = (num || `Fila ${i+1}`) + (from && to ? ` [${from}–${to}]` : '');
+      sel.appendChild(new Option(label, i));
+    }
+  });
+  document.getElementById('dupRefHint').textContent = '';
+  document.getElementById('dupObs').value = '';
+  openModal('dupModal');
+  sel.addEventListener('change', function() {
+    const idx = parseInt(this.value);
+    if (isNaN(idx)) return;
+    const tr = document.querySelectorAll('#bodyMue tr')[idx];
+    const from = tr?.querySelector('td:nth-child(3) input')?.value;
+    const to   = tr?.querySelector('td:nth-child(4) input')?.value;
+    document.getElementById('dupRefHint').textContent = from && to ? `Intervalo: ${from} – ${to} m` : '';
+  }, { once: false });
+}
+
+function insertDuplicado() {
+  const refIdx  = parseInt(document.getElementById('dupRefSel').value);
+  const tipo    = document.getElementById('dupTipoSel').value;
+  const obs     = document.getElementById('dupObs').value;
+  if (isNaN(refIdx)) { toast('Selecciona una muestra de referencia.', 'warn'); return; }
+
+  const allRows = document.querySelectorAll('#bodyMue tr');
+  const refTr   = allRows[refIdx];
+  const from    = refTr?.querySelector('td:nth-child(3) input')?.value || '';
+  const to      = refTr?.querySelector('td:nth-child(4) input')?.value || '';
+  const oz      = refTr?.querySelector('td.symb-cell .symb-oz')?.title || '';
+  const parentN = refTr?.querySelector('td:nth-child(6) input')?.value || '';  // N° Muestra PRI
+
+  const newRow = buildMueRow({ From: from, To: to, 'Ore Zone': oz, 'Tipo de Muestra': tipo, Comentarios: obs, 'parent sample number': parentN });
+  newRow.classList.add('row-dup');
+  refTr.insertAdjacentElement('afterend', newRow);
+  const newIdx = Array.from(document.querySelectorAll('#bodyMue tr')).indexOf(newRow);
+  recalcMueLen(newRow, newIdx);
+  renumberRows('bodyMue');
+  updateBadge('muestreo', document.querySelectorAll('#bodyMue tr').length);
+  validateMuestras();
+  closeModal('dupModal');
+  addLog('INSERTAR DUP', activeHole, `${tipo} después de "${parentN}" [${from}–${to}]`);
+  toast(`${tipo} insertado`, 'ok');
+}
+
+/* ═══════════════════════════════════════════
+   CONTROL / ESTÁNDAR MODAL
+═══════════════════════════════════════════ */
+function openCtrlModal() {
+  const sel = document.getElementById('ctrlRefSel');
+  sel.innerHTML = '<option value="">— Al inicio —</option>';
+  document.querySelectorAll('#bodyMue tr').forEach((tr, i) => {
+    const num  = tr.querySelector('td:nth-child(6) input')?.value;   // col6=N°Muestra
+    const from = tr.querySelector('td:nth-child(3) input')?.value;   // col3=From
+    const to   = tr.querySelector('td:nth-child(4) input')?.value;   // col4=To
+    const label = (num || `Fila ${i+1}`) + (from && to ? ` [${from}–${to}]` : '');
+    sel.appendChild(new Option(label, i));
+  });
+  populateSelect('ctrlCrmSel', LISTS.tipo_control || [], false);
+  document.getElementById('ctrlObs').value = '';
+  onCtrlTipoChange();
+  openModal('ctrlModal');
+}
+
+function onCtrlTipoChange() {
+  const tipo = document.getElementById('ctrlTipoSel').value;
+  document.getElementById('ctrlCrmField').style.display = tipo === 'CRM' ? 'block' : 'none';
+}
+
+function insertControl() {
+  const refVal  = document.getElementById('ctrlRefSel').value;
+  const tipo    = document.getElementById('ctrlTipoSel').value;
+  const crm     = document.getElementById('ctrlCrmSel').value;
+  const obs     = document.getElementById('ctrlObs').value;
+  const tipoCtrl = tipo === 'CRM' ? crm : 'CBK';
+
+  const newRow = buildMueRow({ 'Tipo de Muestra': 'Control', 'Tipo de Control': tipoCtrl, Comentarios: obs });
+  newRow.classList.add('row-ctrl');
+
+  const allRows = document.querySelectorAll('#bodyMue tr');
+  if (refVal === '' || allRows.length === 0) {
+    document.getElementById('bodyMue').insertBefore(newRow, document.getElementById('bodyMue').firstChild);
+  } else {
+    const refIdx = parseInt(refVal);
+    if (!isNaN(refIdx) && allRows[refIdx]) {
+      allRows[refIdx].insertAdjacentElement('afterend', newRow);
+    } else {
+      document.getElementById('bodyMue').appendChild(newRow);
+    }
+  }
+
+  updateBadge('muestreo', document.querySelectorAll('#bodyMue tr').length);
+  validateMuestras();
+  closeModal('ctrlModal');
+  addLog('INSERTAR CTRL', activeHole, `${tipoCtrl} insertado`);
+  toast(`Control ${tipoCtrl} insertado`, 'ok');
+}
+
+/* shared row builder used by dup/ctrl (insert at position, not append) */
+function buildMueRow(data) {
+  const L   = LISTS;
+  const mkSel = (list, val, extra='') => {
+    const opts = ['', ...(L[list]||[])].map(o =>
+      `<option value="${o}" ${o===val?'selected':''}>${o||'—'}</option>`).join('');
+    return `<select ${extra}>${opts}</select>`;
+  };
+  const tipo = data['Tipo de Muestra'] || 'PRI';
+  const oz   = data['Ore Zone'] || '';
+  const oc   = ozColor(oz);
+  const tr   = document.createElement('tr');
+  const uid  = Date.now() + Math.random();
+  tr.innerHTML = `
+    <td class="rn-cell" style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3);padding:4px 6px;width:32px">—</td>
+    <td class="symb-cell" style="min-width:62px"><div class="symb-oz" style="background:${oc};height:20px;width:56px;border-radius:3px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.5)">${oz||'—'}</div></td>
+    <td><input type="number" value="${data.From??''}" step="0.01" oninput="onMueInput(this)"></td>
+    <td><input type="number" value="${data.To??''}" step="0.01" oninput="onMueInput(this)"></td>
+    <td class="computed" id="mulen${uid}">—</td>
+    <td><input type="text" value="${data['Numero Muestra']??''}" placeholder="BAY-26-DH-XXXX-###" style="min-width:155px"></td>
+    <td>${mkSel('tipo_muestra', tipo, 'onchange="onMueTipoChange(this)"')}</td>
+    <td>${mkSel('tipo_control', data['Tipo de Control']||'')}</td>
+    <td><select><option value="N" selected>N</option><option value="Y">Y</option></select></td>
+    <td><input type="date" value="${data['Fecha Muestreo']??''}"></td>
+    <td><input type="number" value="${data['Peso Muestra']??''}" step="0.1" min="0"></td>
+    <td><input type="text" value="${data['parent sample number']??''}" style="min-width:140px"></td>
+    <td><input type="text" value="${data.Comentarios??''}"></td>
+    <td class="td-act"><button class="btn-icon" onclick="delRow(this,'bodyMue','muestreo')" title="Eliminar">✕</button></td>`;
+  return tr;
+}
+
+/* ═══════════════════════════════════════════
+   DENSIDAD TABLE
+═══════════════════════════════════════════ */
+function addDensRow(data={}) {
+  const tb  = document.getElementById('bodyDens');
+  const idx = tb.rows.length;
+  const tr  = document.createElement('tr');
+  const tipoOpts = ['DENS','REPE','CHECK'].map(o =>
+    `<option value="${o}" ${(data['Tipo Dens']||'DENS')===o?'selected':''}>${o}</option>`).join('');
+  // #=1, From=2, To=3, DesdeDens=4, HastaDens=5, NMuestra=6, TipoDens=7, Fecha=8, PH=9, PS=10, L1-L4=11-14, D1-D4=15-18, Estado=19
+  tr.innerHTML = `
+    ${rowNumCell(idx)}
+    <td><input type="number" value="${data.From??''}" step="0.01" style="min-width:65px"></td>
+    <td><input type="number" value="${data.To??''}" step="0.01" style="min-width:65px"></td>
+    <td><input type="number" value="${data['Desde Dens']??''}" step="0.001" style="min-width:65px"></td>
+    <td><input type="number" value="${data['Hasta Dens']??''}" step="0.001" style="min-width:65px"></td>
+    <td><input type="text" value="${data['Numero Dens']??''}" placeholder="BAY-26-ED-###" style="min-width:140px"></td>
+    <td><select>${tipoOpts}</select></td>
+    <td><input type="date" value="${data['Fecha Muestreo']??''}"></td>
+    <td><input type="number" value="${data['Peso Humedo']??''}" step="0.01" min="0" style="min-width:75px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data['Peso Seco']??''}" step="0.01" min="0" style="min-width:75px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data.L1??''}" step="0.001" min="0" style="min-width:58px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data.L2??''}" step="0.001" min="0" style="min-width:58px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data.L3??''}" step="0.001" min="0" style="min-width:58px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data.L4??''}" step="0.001" min="0" style="min-width:58px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data.D1??''}" step="0.001" min="0" style="min-width:58px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data.D2??''}" step="0.001" min="0" style="min-width:58px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data.D3??''}" step="0.001" min="0" style="min-width:58px" oninput="recalcDensRow(this)"></td>
+    <td><input type="number" value="${data.D4??''}" step="0.001" min="0" style="min-width:58px" oninput="recalcDensRow(this)"></td>
+    <td id="ddStat${idx}" class="dens-ok" style="min-width:80px">—</td>
+    <td class="td-act"><button class="btn-icon" onclick="delRow(this,'bodyDens','densidad')" title="Eliminar">✕</button></td>`;
+  tb.appendChild(tr);
+  recalcDensRow(tr.querySelector('[oninput]'));
+  updateBadge('densidad', tb.rows.length);
+}
+
+function recalcDensRow(inp) {
+  const tr  = inp.closest('tr');
+  const idx = Array.from(tr.parentNode.rows).indexOf(tr);
+
+  const pH = parseFloat(tr.querySelector('td:nth-child(9) input')?.value);
+  const pS = parseFloat(tr.querySelector('td:nth-child(10) input')?.value);
+
+  // L cols: 11,12,13,14   D cols: 15,16,17,18
+  const Ls = [11,12,13,14].map(c => parseFloat(tr.querySelector(`td:nth-child(${c}) input`)?.value)).filter(v => !isNaN(v) && v > 0);
+  const Ds = [15,16,17,18].map(c => parseFloat(tr.querySelector(`td:nth-child(${c}) input`)?.value)).filter(v => !isNaN(v) && v > 0);
+
+  const mean = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : NaN;
+  const cv   = arr => {
+    const m = mean(arr);
+    return arr.length > 1 && m > 0
+      ? Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length)/m*100
+      : 0;
+  };
+  const Lmean = mean(Ls), Lcv = cv(Ls);
+  const Dmean = mean(Ds), Dcv = cv(Ds);
+
+  const stat = document.getElementById('ddStat'+idx);
+  if (!stat) return;
+
+  const errors = [], warns = [];
+  if (!isNaN(pH) && !isNaN(pS) && pH < pS)        errors.push('P.Húm < P.Seco');
+  if (!isNaN(pH) && !isNaN(pS) && pS > 0 && (pH-pS)/pS*100 > 20) warns.push('Δpeso >20%');
+  if (Ls.length >= 2 && Lcv > 10)  errors.push(`CV_L=${Lcv.toFixed(1)}%`);
+  else if (Ls.length >= 2 && Lcv > 5) warns.push(`CV_L=${Lcv.toFixed(1)}%`);
+  if (Ds.length >= 2 && Dcv > 10)  errors.push(`CV_D=${Dcv.toFixed(1)}%`);
+  else if (Ds.length >= 2 && Dcv > 5) warns.push(`CV_D=${Dcv.toFixed(1)}%`);
+
+  if (errors.length) {
+    stat.className = 'dens-err'; stat.textContent = '✗ ' + errors[0];
+    tr.classList.add('row-error'); tr.classList.remove('row-warn');
+  } else if (warns.length) {
+    stat.className = 'dens-warn'; stat.textContent = '⚠ ' + warns[0];
+    tr.classList.add('row-warn'); tr.classList.remove('row-error');
+  } else {
+    const anyData = !isNaN(pH) || Ls.length > 0 || Ds.length > 0;
+    stat.className = 'dens-ok'; stat.textContent = anyData ? '✓ OK' : '—';
+    tr.classList.remove('row-error','row-warn');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   IMPORT FROM GEO → DENSIDAD (Tomar Densidad?=Y)
+═══════════════════════════════════════════ */
+function importFromGeoToDens() {
+  const geoRows = document.querySelectorAll('#bodyGeo tr');
+  if (!geoRows.length) { toast('No hay filas en Geología.', 'warn'); return; }
+
+  const toImport = [];
+  geoRows.forEach(tr => {
+    // #=1, From=2, To=3, Len=4, symb=5, Lito1=6, LitoMod=7, OZ=8, OZMod=9,
+    // Color=10, Intens=11, Cont=12, Gran=13, Fosiles=14, Dens?=15, Muestrea?=16
+    const densSel = tr.querySelector('td:nth-child(15) select');
+    if (densSel && densSel.value === 'Y') {
+      const from = tr.querySelector('td:nth-child(2) input')?.value;
+      const to   = tr.querySelector('td:nth-child(3) input')?.value;
+      if (from && to) toImport.push({ From: from, To: to });
+    }
+  });
+
+  if (!toImport.length) {
+    toast('No hay intervalos con "Tomar Densidad? = Y" en Geología.', 'warn'); return;
+  }
+
+  const existing = new Set();
+  document.querySelectorAll('#bodyDens tr').forEach(tr => {
+    const f = tr.querySelector('td:nth-child(1) input')?.value;
+    const t = tr.querySelector('td:nth-child(2) input')?.value;
+    if (f && t) existing.add(f+'-'+t);
+  });
+
+  let added = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  toImport.forEach(r => {
+    const key = r.From + '-' + r.To;
+    if (!existing.has(key)) {
+      addDensRow({ From: r.From, To: r.To, 'Desde Dens': r.From, 'Hasta Dens': r.To, 'Fecha Muestreo': today });
+      existing.add(key); added++;
+    }
+  });
+  toast(added > 0 ? `${added} intervalos importados` : 'Todos ya existen en Densidad', added > 0 ? 'ok' : 'warn');
+  addLog('IMPORTAR GEO→DENS', activeHole, `${added} intervalos`);
+}
+
+function autoNumDens() {
+  const hole = document.getElementById('h_holenum').value.trim() || 'BAY-26-DH-XXXX';
+  // Replace DH → ED in the sample code: BAY-26-DH-0060 → BAY-26-ED-0060
+  const edBase = hole.replace(/-DH-/, '-ED-');
+  let counter = 1;
+  document.querySelectorAll('#bodyDens tr').forEach(tr => {
+    const inp = tr.querySelector('td:nth-child(6) input');  // col6=N°Muestra
+    if (!inp || inp.value) return;
+    inp.value = edBase + '-' + String(counter).padStart(3,'0');
+    counter++;
+  });
+  toast('Muestras de densidad numeradas');
+}
+
+/* ═══════════════════════════════════════════
+   LEGEND RENDER (instrucciones)
+═══════════════════════════════════════════ */
+function renderLegends() {
+  const ll = document.getElementById('litoLegend');
+  const ol = document.getElementById('ozLegend');
+  if (ll) ll.innerHTML = Object.entries(LITO_COLORS).filter(([k])=>k).map(([k,c]) =>
+    `<div class="leg-pill" style="background:${c}"><div class="leg-swatch" style="background:${c};border:1px solid rgba(0,0,0,.2)"></div>${k}</div>`).join('');
+  if (ol) ol.innerHTML = Object.entries(OZ_COLORS).filter(([k])=>k).map(([k,c]) =>
+    `<div class="leg-pill" style="background:${c}"><div class="leg-swatch" style="background:${c};border:1px solid rgba(0,0,0,.2)"></div>${k}</div>`).join('');
+}
+
+/* ═══════════════════════════════════════════
+   HELPER: last To value in a tbody
+═══════════════════════════════════════════ */
+function getLastTo(tbodyId) {
+  const rows = document.querySelectorAll('#' + tbodyId + ' tr');
+  if (!rows.length) return null;
+  const last = rows[rows.length - 1];
+  // col1=#, col2=From, col3=To
+  const inp = last.querySelector('td:nth-child(3) input');
+  const v = parseFloat(inp?.value);
+  return isNaN(v) ? null : v;
+}
+
+/* ═══════════════════════════════════════════
+   DELETE ROW
+═══════════════════════════════════════════ */
+function delRow(btn, tbodyId, section) {
+  btn.closest('tr').remove();
+  const n = document.querySelectorAll('#' + tbodyId + ' tr').length;
+  updateBadge(section, n);
+  renumberRows(tbodyId);
+  updateDepthBars();
+  if (section === 'marcacion') validateIntervals('bodyMarc', 'marc');
+  if (section === 'geologia')  validateIntervals('bodyGeo',  'geo');
+  if (section === 'muestreo')  validateMuestras();
+}
+
+/* ═══════════════════════════════════════════
+   SAVE HEADER
+═══════════════════════════════════════════ */
+function saveHeader() {
+  if (!activeHole) { toast('Crea o selecciona un sondaje primero.', 'warn'); return; }
+  const h = {
+    'Hole number':      document.getElementById('h_holenum').value,
+    Project:            document.getElementById('h_project').value,
+    Fase:               document.getElementById('h_fase').value,
+    'Tipo de Sondaje':  document.getElementById('h_tipo').value,
+    Diametro:           document.getElementById('h_diam').value,
+    'Ubicación':        document.getElementById('h_ubic').value,
+    Plataforma:         document.getElementById('h_plat').value,
+    Azimuth:            document.getElementById('h_az').value,
+    Dip:                document.getElementById('h_dip').value,
+    Profundidad:        document.getElementById('h_prof').value,
+    'Is Completed':     document.getElementById('h_completed').value,
+    Geologo:            document.getElementById('h_geologo').value,
+    'Tecnico Geologia': document.getElementById('h_tec').value,
+    Cliente:            document.getElementById('h_cliente').value,
+    'Compañía':         document.getElementById('h_cia').value,
+    'Empresa Perforacion':document.getElementById('h_epf').value,
+    Inicio:             document.getElementById('h_inicio').value,
+    Fin:                document.getElementById('h_fin').value,
+    'Fecha de Ingreso': document.getElementById('h_fing').value,
+    'Numero Cajas':     document.getElementById('h_cajas').value,
+    'coord.Type':       document.getElementById('c_type').value,
+    'coord.Grid':       document.getElementById('c_grid').value,
+    'coord.Northing':   document.getElementById('c_north').value,
+    'coord.Easting':    document.getElementById('c_east').value,
+    'coord.Elevation':  document.getElementById('c_elev').value,
+    'Metodo Topografico':document.getElementById('h_metodo_top').value,
+    Comentarios:        document.getElementById('h_comments').value,
+  };
+  HOLES[activeHole].header = h;
+  persist();
+  addLog('GUARDAR HEADER', activeHole, 'Header actualizado');
+  setStatus('Header guardado — ' + activeHole);
+  updateDepthBars();
+  toast('Header guardado', 'ok');
+}
+
+/* ═══════════════════════════════════════════
+   SAVE INTERVALS (generic)
+═══════════════════════════════════════════ */
+function saveSection(section) {
+  if (!activeHole) { toast('Selecciona un sondaje primero.', 'warn'); return; }
+  let rows;
+  if (section === 'marcacion') {
+    const ok = validateIntervals('bodyMarc', 'marc');
+    rows = collectTable('bodyMarc',
+      ['From','To','Length','Rec m','Rec %','Rec Geo','Rec Geo %','Comments'],
+      ['rn-cell']);
+    // inject computed cols
+    rows = rows.map(r => {
+      const len = parseFloat(r.To) - parseFloat(r.From);
+      const rm  = parseFloat(r['Rec m']) || 0;
+      const rg  = parseFloat(r['Rec Geo']) || 0;
+      r.Length     = isNaN(len) ? '' : len.toFixed(3);
+      r['Rec %']   = len > 0 ? (rm / len * 100).toFixed(2) : '';
+      r['Rec Geo %'] = len > 0 ? (rg / len * 100).toFixed(2) : '';
+      return r;
+    });
+    if (!ok && !confirm('Hay errores de intervalos. ¿Guardar de todas formas?')) return;
+  } else if (section === 'geologia') {
+    const ok = validateIntervals('bodyGeo', 'geo');
+    rows = collectTable('bodyGeo',
+      ['From','To','Length','Lito 1','LitoMod','Ore Zone','Ore Zone Mod',
+       'Color','Intensidad de Color','Contacto','Granulometria','Fosiles',
+       'Tomar Densidad?','Se Muestrea?','Circuito?','% Vlls','Descripcion'],
+      ['symb-cell','rn-cell']);
+    rows = rows.map(r => {
+      r.Length = (parseFloat(r.To) - parseFloat(r.From)).toFixed(3);
+      return r;
+    });
+    if (!ok && !confirm('Hay errores de intervalos. ¿Guardar de todas formas?')) return;
+  } else if (section === 'muestreo') {
+    rows = collectTable('bodyMue',
+      ['Ore Zone','From','To','Length','Numero Muestra','Tipo de Muestra','Tipo de Control',
+       'Control Granulometria?','Fecha Muestreo','Peso Muestra',
+       'parent sample number','Comentarios'],
+      ['symb-cell','rn-cell']);
+    rows = rows.map(r => {
+      r.Length = (parseFloat(r.To) - parseFloat(r.From)).toFixed(3);
+      return r;
+    });
+  } else if (section === 'densidad') {
+    rows = collectTable('bodyDens',
+      ['From','To','Desde Dens','Hasta Dens','Numero Dens','Tipo Dens',
+       'Fecha Muestreo','Peso Humedo','Peso Seco',
+       'L1','L2','L3','L4','D1','D2','D3','D4'],
+      ['rn-cell']);
+  }
+  if (!rows || !rows.length) {
+    toast('No hay datos en ' + section + ' para guardar.', 'warn'); return;
+  }
+  HOLES[activeHole][section] = rows;
+  persist();
+  addLog('GUARDAR ' + section.toUpperCase(), activeHole, rows.length + ' filas');
+  setStatus(section.charAt(0).toUpperCase() + section.slice(1) + ' guardado');
+  toast(section.charAt(0).toUpperCase() + section.slice(1) + ' guardado — ' + rows.length + ' filas', 'ok');
+}
+
+/* ═══════════════════════════════════════════
+   COLLECT TABLE
+═══════════════════════════════════════════ */
+function collectTable(tbodyId, cols, skipClasses=[]) {
+  const rows = [];
+  document.querySelectorAll('#' + tbodyId + ' tr').forEach(tr => {
+    const cells = Array.from(tr.querySelectorAll('td'));
+    const row = {}; let ci = 0;
+    cells.forEach(td => {
+      if (td.classList.contains('td-act') || td.classList.contains('computed')) return;
+      if (skipClasses.some(c => td.classList.contains(c))) return;
+      const inp = td.querySelector('input,select,textarea');
+      if (inp && ci < cols.length) { row[cols[ci]] = inp.value; ci++; }
+    });
+    if (Object.values(row).some(v => v !== '')) rows.push(row);
+  });
+  return rows;
+}
+
+/* ═══════════════════════════════════════════
+   USER MANAGEMENT (admin only)
+═══════════════════════════════════════════ */
+function renderUserTable() {
+  const tbody = document.getElementById('userTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = Object.entries(USERS).map(([uid, u]) => `
+    <tr>
+      <td style="font-family:var(--mono);font-weight:700">${uid}</td>
+      <td>${u.name}</td>
+      <td><span class="role-badge ${u.role}">${u.role === 'admin' ? '★ Admin' : 'Geólogo'}</span></td>
+      <td><span class="role-badge ${u.active ? 'geologo' : 'inactivo'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
+      <td style="display:flex;gap:4px;padding:6px 8px">
+        <button class="btn btn-secondary btn-sm" onclick="resetUserPwd('${uid}')">🔑 Reset pwd</button>
+        ${uid !== 'admin' ? `<button class="btn ${u.active ? 'btn-danger' : 'btn-ok'} btn-sm" onclick="toggleUserActive('${uid}')">${u.active ? 'Desactivar' : 'Activar'}</button>` : ''}
+        ${uid !== 'admin' ? `<button class="btn-icon" onclick="deleteUser('${uid}')">🗑</button>` : ''}
+      </td>
+    </tr>`).join('');
+  renderUserPreview();
+}
+
+function renderUserPreview() {
+  const el = document.getElementById('userTablePreview');
+  if (!el) return;
+  el.innerHTML = Object.entries(USERS).map(([uid, u]) => `
+    <tr>
+      <td style="font-family:var(--mono);font-weight:700">${uid}</td>
+      <td>${u.name}</td>
+      <td><span class="role-badge ${u.role}">${u.role === 'admin' ? '★ Admin' : 'Geólogo'}</span></td>
+      <td><span class="role-badge ${u.active ? 'geologo' : 'inactivo'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
+    </tr>`).join('');
+}
+
+function addUser() {
+  const login = document.getElementById('nu_login').value.trim();
+  const name  = document.getElementById('nu_name').value.trim();
+  const pwd   = document.getElementById('nu_pwd').value;
+  const role  = document.getElementById('nu_role').value;
+  const err   = document.getElementById('nuErr');
+
+  if (!login) { err.textContent = 'El nombre de usuario es requerido.'; return; }
+  if (!name)  { err.textContent = 'El nombre completo es requerido.'; return; }
+  if (!pwd || pwd.length < 4) { err.textContent = 'La contraseña debe tener al menos 4 caracteres.'; return; }
+  if (USERS[login]) { err.textContent = 'Ya existe un usuario con ese nombre de login.'; return; }
+
+  USERS[login] = { name, pwd, role, active: true };
+  persist();
+  err.textContent = '';
+  document.getElementById('nu_login').value = '';
+  document.getElementById('nu_name').value  = '';
+  document.getElementById('nu_pwd').value   = '';
+  renderUserTable();
+  populateLoginDropdown();
+  addLog('ADMIN USUARIOS', '—', `Usuario creado: ${login} (${role})`);
+  toast('Usuario ' + login + ' creado', 'ok');
+}
+
+function toggleUserActive(uid) {
+  if (!USERS[uid]) return;
+  USERS[uid].active = !USERS[uid].active;
+  persist();
+  renderUserTable();
+  populateLoginDropdown();
+  addLog('ADMIN USUARIOS', '—', `Usuario ${uid}: ${USERS[uid].active ? 'activado' : 'desactivado'}`);
+  toast(`Usuario ${uid} ${USERS[uid].active ? 'activado' : 'desactivado'}`, 'warn');
+}
+
+function deleteUser(uid) {
+  if (!confirm(`¿Eliminar usuario "${uid}" (${USERS[uid]?.name})?`)) return;
+  delete USERS[uid];
+  persist();
+  renderUserTable();
+  populateLoginDropdown();
+  addLog('ADMIN USUARIOS', '—', `Usuario eliminado: ${uid}`);
+  toast('Usuario eliminado', 'warn');
+}
+
+function resetUserPwd(uid) {
+  const newPwd = prompt(`Nueva contraseña para "${uid}" (${USERS[uid]?.name}):`);
+  if (!newPwd) return;
+  if (newPwd.length < 4) { toast('Mínimo 4 caracteres', 'warn'); return; }
+  USERS[uid].pwd = newPwd;
+  persist();
+  addLog('ADMIN USUARIOS', '—', `Contraseña reseteada: ${uid}`);
+  toast('Contraseña actualizada para ' + uid, 'ok');
+}
+
+/* ═══════════════════════════════════════════
+   EXPORT — MODAL + ZIP
+═══════════════════════════════════════════ */
+function openExportModal() {
+  // Save current state first
+  if (activeHole) { saveHeader(); saveSection('marcacion'); saveSection('geologia'); saveSection('muestreo'); saveSection('densidad'); }
+
+  const list = document.getElementById('exportHoleList');
+  const holes = Object.keys(HOLES);
+  if (!holes.length) { toast('No hay sondajes guardados para exportar.', 'warn'); return; }
+
+  list.innerHTML = holes.map(id => {
+    const h   = HOLES[id].header || {};
+    const nrc = (HOLES[id].marcacion||[]).length;
+    const ngc = (HOLES[id].geologia||[]).length;
+    const nmc = (HOLES[id].muestreo||[]).length;
+    const isActive = id === activeHole;
+    return `<div class="export-hole-item ${isActive ? 'selected' : ''}" onclick="toggleExportHole(this)">
+      <input type="checkbox" value="${id}" ${isActive ? 'checked' : ''} onclick="event.stopPropagation();this.closest('.export-hole-item').classList.toggle('selected',this.checked)">
+      <div>
+        <div class="export-hole-id">${id}</div>
+        <div class="export-hole-meta">${h.Project||'—'} · ${h['Tipo de Sondaje']||'—'} · ${h.Profundidad||'—'} m &nbsp;|&nbsp; Marc: ${nrc} · Geo: ${ngc} · Mue: ${nmc}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Reset section checkboxes
+  document.querySelectorAll('#exportSections input').forEach(cb => {
+    cb.checked = true;
+    const lbl = cb.closest('label');
+    if (lbl) lbl.classList.add('checked');
+  });
+  document.getElementById('zipProgress').classList.remove('show');
+  openModal('exportModal');
+}
+
+function toggleExportHole(div) {
+  const cb = div.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  div.classList.toggle('selected', cb.checked);
+}
+
+function toggleSectionLabel(cb, lblId) {
+  document.getElementById(lblId).classList.toggle('checked', cb.checked);
+}
+
+function selectAllHoles(checked) {
+  document.querySelectorAll('#exportHoleList input[type=checkbox]').forEach(cb => {
+    cb.checked = checked;
+    cb.closest('.export-hole-item').classList.toggle('selected', checked);
+  });
+}
+
+async function doExportZip() {
+  const selectedHoles = Array.from(document.querySelectorAll('#exportHoleList input[type=checkbox]:checked'))
+    .map(cb => cb.value);
+  const selectedSections = Array.from(document.querySelectorAll('#exportSections input[type=checkbox]:checked'))
+    .map(cb => cb.value);
+
+  if (!selectedHoles.length)    { toast('Selecciona al menos un sondaje.', 'warn'); return; }
+  if (!selectedSections.length) { toast('Selecciona al menos una sección.', 'warn'); return; }
+
+  document.getElementById('zipProgress').classList.add('show');
+
+  // Small delay to let UI update
+  await new Promise(r => setTimeout(r, 80));
+
+  try {
+    const files = [];
+    const ts = new Date().toISOString().slice(0, 10);
+
+    selectedHoles.forEach(id => {
+      const d = HOLES[id];
+      if (!d) return;
+
+      if (selectedSections.includes('header')) {
+        files.push({ name: `${id}/${id}_Header_${ts}.csv`, content: toCSV([d.header || {}]) });
+      }
+      if (selectedSections.includes('marcacion') && (d.marcacion||[]).length) {
+        files.push({ name: `${id}/${id}_Marcacion_${ts}.csv`, content: toCSV(d.marcacion) });
+      }
+      if (selectedSections.includes('geologia') && (d.geologia||[]).length) {
+        files.push({ name: `${id}/${id}_Geologia_${ts}.csv`, content: toCSV(d.geologia) });
+      }
+      if (selectedSections.includes('muestreo') && (d.muestreo||[]).length) {
+        files.push({ name: `${id}/${id}_Muestreo_${ts}.csv`, content: toCSV(d.muestreo) });
+      }
+      if (selectedSections.includes('densidad') && (d.densidad||[]).length) {
+        files.push({ name: `${id}/${id}_Densidad_${ts}.csv`, content: toCSV(d.densidad) });
+      }
+    });
+
+    if (!files.length) { toast('No hay datos en las secciones seleccionadas.', 'warn'); document.getElementById('zipProgress').classList.remove('show'); return; }
+
+    const zipBytes = buildZip(files);
+    const blob = new Blob([zipBytes], { type: 'application/zip' });
+    const a = document.createElement('a');
+    const zipName = selectedHoles.length === 1
+      ? `${selectedHoles[0]}_export_${ts}.zip`
+      : `CoreLogging_export_${ts}_${selectedHoles.length}sondajes.zip`;
+    a.href = URL.createObjectURL(blob);
+    a.download = zipName;
+    a.click();
+
+    addLog('EXPORTAR ZIP', selectedHoles.join(', '),
+      `${files.length} archivos · secciones: ${selectedSections.join(', ')}`);
+    toast(`ZIP generado: ${files.length} archivos`, 'ok');
+    closeModal('exportModal');
+  } catch(e) {
+    console.error(e);
+    toast('Error generando ZIP: ' + e.message, 'err');
+  }
+  document.getElementById('zipProgress').classList.remove('show');
+}
+
+/* ─── Minimal ZIP builder (no external lib needed) ─── */
+function buildZip(files) {
+  const enc = new TextEncoder();
+  const localHeaders = [];
+  const centralDir   = [];
+  let offset = 0;
+
+  files.forEach(f => {
+    const nameBytes    = enc.encode(f.name);
+    const contentBytes = enc.encode(f.content);
+    const crc          = crc32(contentBytes);
+    const size         = contentBytes.length;
+    const now          = dosDateTime();
+
+    // Local file header
+    const lhSize = 30 + nameBytes.length;
+    const lh = new Uint8Array(lhSize);
+    const lv = new DataView(lh.buffer);
+    lv.setUint32(0,  0x04034b50, true); // signature
+    lv.setUint16(4,  20, true);          // version needed
+    lv.setUint16(6,  0, true);           // flags
+    lv.setUint16(8,  0, true);           // compression (store)
+    lv.setUint16(10, now.time, true);
+    lv.setUint16(12, now.date, true);
+    lv.setUint32(14, crc, true);
+    lv.setUint32(18, size, true);        // compressed
+    lv.setUint32(22, size, true);        // uncompressed
+    lv.setUint16(26, nameBytes.length, true);
+    lv.setUint16(28, 0, true);           // extra len
+    lh.set(nameBytes, 30);
+
+    localHeaders.push(lh);
+    localHeaders.push(contentBytes);
+
+    // Central directory entry
+    const cdSize = 46 + nameBytes.length;
+    const cd = new Uint8Array(cdSize);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0,  0x02014b50, true);
+    cv.setUint16(4,  20, true);
+    cv.setUint16(6,  20, true);
+    cv.setUint16(8,  0, true);
+    cv.setUint16(10, 0, true);
+    cv.setUint16(12, now.time, true);
+    cv.setUint16(14, now.date, true);
+    cv.setUint32(16, crc, true);
+    cv.setUint32(20, size, true);
+    cv.setUint32(24, size, true);
+    cv.setUint16(28, nameBytes.length, true);
+    cv.setUint16(30, 0, true); cv.setUint16(32, 0, true); cv.setUint16(34, 0, true);
+    cv.setUint16(36, 0, true); cv.setUint32(38, 0, true);
+    cv.setUint32(42, offset, true);
+    cd.set(nameBytes, 46);
+    centralDir.push(cd);
+
+    offset += lhSize + size;
+  });
+
+  const cdOffset = offset;
+  const cdBytes  = concat(centralDir);
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0,  0x06054b50, true);
+  ev.setUint16(4,  0, true); ev.setUint16(6, 0, true);
+  ev.setUint16(8,  files.length, true);
+  ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdBytes.length, true);
+  ev.setUint32(16, cdOffset, true);
+  ev.setUint16(20, 0, true);
+
+  return concat([...localHeaders, cdBytes, eocd]);
+}
+
+function concat(arrays) {
+  const total = arrays.reduce((s, a) => s + a.length, 0);
+  const out = new Uint8Array(total);
+  let off = 0;
+  arrays.forEach(a => { out.set(a, off); off += a.length; });
+  return out;
+}
+
+function crc32(bytes) {
+  let crc = 0xFFFFFFFF;
+  const table = crc32.table || (crc32.table = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c;
+    }
+    return t;
+  })());
+  for (let i = 0; i < bytes.length; i++) crc = table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function dosDateTime() {
+  const d = new Date();
+  return {
+    date: ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(),
+    time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+  };
+}
+
+/* keep exportAllCSV for backward compat (not shown in UI) */
+function exportAllCSV() { openExportModal(); }
+
+function toCSV(rows) {
+  if (!rows || !rows.length) return '';
+  const keys = Object.keys(rows[0]);
+  return [keys.map(k => '"' + k + '"').join(',')]
+    .concat(rows.map(r => keys.map(k => '"' + (r[k]||'').toString().replace(/"/g,'""') + '"').join(','))).join('\r\n');
+}
+
+function dlFile(content, filename) {
+  if (!content) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type:'text/csv;charset=utf-8;'}));
+  a.download = filename; a.click();
+}
+
+/* ═══════════════════════════════════════════
+   LOAD EXAMPLE (BAY-26-DH-0060)
+═══════════════════════════════════════════ */
+function loadExample() {
+  // Create hole if not exists
+  const id = 'BAY-26-DH-0060';
+  if (!HOLES[id]) HOLES[id] = { header:{}, marcacion:[], geologia:[], muestreo:[] };
+  activeHole = id;
+  rebuildHoleDropdown();
+  document.getElementById('holeSelectorDropdown').value = id;
+  document.getElementById('topHoleBadge').textContent = id;
+
+  setVal('h_holenum', id);
+  setVal('h_project', 'MIN');
+  setVal('h_fase', '');
+  setVal('h_tipo', 'DD');
+  setVal('h_diam', 'PQ');
+  setVal('h_ubic', 'M48');
+  setVal('h_plat', 'M48-134'); document.getElementById('h_plat').value = 'M48-134';
+  setVal('h_az', '0.0');
+  setVal('h_dip', '-90.0');
+  document.getElementById('h_prof').value = '45.8';
+  setVal('h_completed', 'Y');
+  setVal('h_geologo', 'MZS');
+  setVal('h_tec', 'CEF');
+  setVal('h_cliente', 'CP');
+  setVal('h_cia', 'CMMM');
+  setVal('h_epf', 'CMMM');
+  document.getElementById('h_inicio').value = '2026-06-01';
+  document.getElementById('h_fin').value    = '2026-06-02';
+  document.getElementById('h_fing').value   = '2026-06-03';
+  document.getElementById('h_cajas').value  = '24';
+  setVal('c_type', 'COLLAR');
+  setVal('c_grid', 'WGS 84 / UTM zone 17S');
+  setVal('h_metodo_top', 'GPS');
+
+  document.getElementById('bodyMarc').innerHTML = '';
+  [
+    {From:'0.0',To:'0.8','Rec m':'0.8','Rec Geo':'0.8'},
+    {From:'0.8',To:'2.3','Rec m':'1.2','Rec Geo':'1.2'},
+    {From:'2.3',To:'3.8','Rec m':'1.4','Rec Geo':'1.4'},
+    {From:'3.8',To:'5.3','Rec m':'1.0','Rec Geo':'1.0'},
+    {From:'5.3',To:'6.8','Rec m':'1.5','Rec Geo':'1.5'},
+    {From:'6.8',To:'8.3','Rec m':'1.4','Rec Geo':'1.4'},
+    {From:'8.3',To:'9.8','Rec m':'1.5','Rec Geo':'1.5'},
+    {From:'9.8',To:'11.3','Rec m':'1.35','Rec Geo':'1.35'},
+  ].forEach(r => addMarcRow(r));
+
+  document.getElementById('bodyGeo').innerHTML = '';
+  [
+    {From:'0.0',To:'6.0','Lito 1':'ARN','LitoMod':'ARN','Ore Zone':'SAR','Color':'MAR','Intensidad de Color':'OSC','Contacto':'GR','Granulometria':'ARA','Fosiles':'NVI','Tomar Densidad?':'Y','Se Muestrea?':'N','Circuito?':'N','% Vlls':'0','Descripcion':'arena fina'},
+    {From:'6.0',To:'9.8','Lito 1':'ARN','LitoMod':'ARN','Ore Zone':'SAR','Color':'MAR','Intensidad de Color':'OSC','Contacto':'GR','Granulometria':'ARA','Fosiles':'NVI','Tomar Densidad?':'Y','Se Muestrea?':'N','Circuito?':'N','% Vlls':'0','Descripcion':'arena gruesa'},
+    {From:'9.8',To:'13.53','Lito 1':'ARN','LitoMod':'ARN','Ore Zone':'SAR','Color':'MAR','Intensidad de Color':'OSC','Contacto':'GR','Granulometria':'ARA','Fosiles':'NVI','Tomar Densidad?':'Y','Se Muestrea?':'N','Circuito?':'N','% Vlls':'0','Descripcion':'arena fina'},
+    {From:'13.53',To:'18.36','Lito 1':'DIS','LitoMod':'DIS','Ore Zone':'SDI_1A','Color':'BEI','Intensidad de Color':'CLA','Contacto':'GR','Granulometria':'ARC','Fosiles':'NVI','Tomar Densidad?':'Y','Se Muestrea?':'N','Circuito?':'N','% Vlls':'0','Descripcion':''},
+    {From:'18.36',To:'23.07','Lito 1':'ARE','LitoMod':'ARE','Ore Zone':'SDI_1C','Color':'GRI','Intensidad de Color':'CLA','Contacto':'GR','Granulometria':'ARA','Fosiles':'NVI','Tomar Densidad?':'Y','Se Muestrea?':'N','Circuito?':'N','% Vlls':'0','Descripcion':''},
+    {From:'23.07',To:'29.8','Lito 1':'ARE','LitoMod':'ARE','Ore Zone':'SDI_1G','Color':'NAR','Intensidad de Color':'OSC','Contacto':'GR','Granulometria':'ARA','Fosiles':'NVI','Tomar Densidad?':'Y','Se Muestrea?':'N','Circuito?':'N','% Vlls':'0','Descripcion':''},
+    {From:'29.8',To:'29.94','Lito 1':'ACL','LitoMod':'ACL','Ore Zone':'CLA','Color':'NAR','Intensidad de Color':'OSC','Contacto':'BR','Granulometria':'GRV','Fosiles':'NVI','Tomar Densidad?':'N','Se Muestrea?':'N','Circuito?':'N','% Vlls':'0','Descripcion':''},
+    {From:'29.94',To:'32.56','Lito 1':'DIS','LitoMod':'DIS','Ore Zone':'SDI_2','Color':'BEI','Intensidad de Color':'CLA','Contacto':'GR','Granulometria':'ARC','Fosiles':'NVI','Tomar Densidad?':'Y','Se Muestrea?':'N','Circuito?':'N','% Vlls':'0','Descripcion':''},
+    {From:'32.56',To:'45.8','Lito 1':'FOS','LitoMod':'FOS','Ore Zone':'CA2','Color':'BEI','Intensidad de Color':'CLA','Contacto':'GR','Granulometria':'ARC','Fosiles':'FOS','Tomar Densidad?':'Y','Se Muestrea?':'Y','Circuito?':'N','% Vlls':'5','Descripcion':'fosfato con fosiles'},
+  ].forEach(r => addGeoRow(r));
+
+  document.getElementById('bodyMue').innerHTML = '';
+  [
+    {From:'32.56',To:'32.66','Numero Muestra':'BAY-26-DH-0060-001','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'154'},
+    {From:'32.66',To:'32.76','Numero Muestra':'BAY-26-DH-0060-003','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'169'},
+    {From:'32.76',To:'32.86','Numero Muestra':'BAY-26-DH-0060-004','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'187'},
+    {From:'','To':'','Numero Muestra':'BAY-26-DH-0060-007','Tipo de Muestra':'Control','Tipo de Control':'BAY02-19','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':''},
+    {From:'32.86',To:'33.22','Numero Muestra':'BAY-26-DH-0060-005','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'737'},
+  ].forEach(r => addMueRow(r));
+
+  updateDepthBars();
+  addLog('CARGAR EJEMPLO', id, 'Datos de ejemplo BAY-26-DH-0060');
+  toast('Ejemplo cargado — BAY-26-DH-0060', 'ok');
+}
+
+/* ═══════════════════════════════════════════
+   HEADER syncBadge
+═══════════════════════════════════════════ */
+function syncBadge() {
+  const v = document.getElementById('h_holenum').value.trim();
+  document.getElementById('topHoleBadge').textContent = v || '—';
+}
+
+/* ═══════════════════════════════════════════
+   ADMIN: HOLE LIST
+═══════════════════════════════════════════ */
+function renderHoleListAdmin() {
+  const c = document.getElementById('holeListAdmin');
+  if (!c) return;
+  const keys = Object.keys(HOLES);
+  if (!keys.length) { c.innerHTML = '<p style="color:var(--text3);font-size:12px;padding:8px">Sin sondajes registrados.</p>'; return; }
+  c.innerHTML = keys.map(id => {
+    const h = HOLES[id].header || {};
+    const n = (HOLES[id].marcacion||[]).length + (HOLES[id].geologia||[]).length + (HOLES[id].muestreo||[]).length;
+    return `<div class="hole-card ${id===activeHole?'active-hole':''}" onclick="loadHole('${id}');switchTab('header')">
+      <div>
+        <div class="hole-card-id">${id}</div>
+        <div class="hole-card-meta">${h.Project||''} · ${h['Tipo de Sondaje']||''} · ${h.Profundidad||'—'} m · ${n} filas totales</div>
+      </div>
+      <div class="flex-row" style="gap:6px">
+        <span class="tag tag-${id===activeHole?'blue':'green'}">${id===activeHole?'Activo':'Guardado'}</span>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteHole('${id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteHole(id) {
+  if (!confirm('¿Eliminar sondaje ' + id + ' y todos sus datos?')) return;
+  delete HOLES[id];
+  if (activeHole === id) {
+    activeHole = null;
+    document.getElementById('topHoleBadge').textContent = '—';
+  }
+  persist();
+  rebuildHoleDropdown();
+  renderHoleListAdmin();
+  addLog('ELIMINAR', id, 'Sondaje eliminado');
+  toast('Sondaje eliminado', 'warn');
+}
+
+/* ═══════════════════════════════════════════
+   ADMIN: LIST EDITOR
+═══════════════════════════════════════════ */
+function populateListSelector() {
+  const sel = document.getElementById('listSelector');
+  sel.innerHTML = '<option value="">— Seleccionar lista —</option>';
+  Object.keys(LIST_LABELS).forEach(k => {
+    sel.appendChild(new Option(LIST_LABELS[k], k));
+  });
+}
+
+function renderListEditor() {
+  const key = document.getElementById('listSelector').value;
+  const c   = document.getElementById('listEditorContainer');
+  const hint = document.getElementById('listHint');
+  if (!key) { c.innerHTML = ''; hint.textContent = ''; return; }
+  hint.textContent = LIST_LABELS[key] || key;
+  const items = LISTS[key] || [];
+  c.innerHTML = `
+    <div class="list-editor">
+      <div class="list-box" style="flex:1">
+        <h4>Valores actuales</h4>
+        <ul class="list-items" id="listItems_${key}">
+          ${items.map((v,i) => `<li><span>${v}</span><button class="btn-icon" onclick="removeListItem('${key}',${i})">✕</button></li>`).join('')}
+        </ul>
+        <div class="list-add">
+          <input type="text" id="newItemInput_${key}" placeholder="Nuevo valor…" onkeydown="if(event.key==='Enter')addListItem('${key}')">
+          <button class="btn btn-primary btn-sm" onclick="addListItem('${key}')">+ Agregar</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-start;padding-top:30px">
+        <button class="btn btn-secondary btn-sm" onclick="resetList('${key}')">↺ Restaurar defecto</button>
+      </div>
+    </div>`;
+}
+
+function addListItem(key) {
+  const inp = document.getElementById('newItemInput_' + key);
+  const val = inp.value.trim();
+  if (!val) return;
+  if (!LISTS[key]) LISTS[key] = [];
+  if (LISTS[key].includes(val)) { toast('Ya existe ese valor', 'warn'); return; }
+  LISTS[key].push(val);
+  persist();
+  populateAllSelects();
+  renderListEditor();
+  addLog('ADMIN LISTA', '—', `Lista "${key}": agregado "${val}"`);
+  toast('Agregado: ' + val, 'ok');
+}
+
+function removeListItem(key, idx) {
+  if (!confirm('¿Eliminar "' + LISTS[key][idx] + '"?')) return;
+  const removed = LISTS[key][idx];
+  LISTS[key].splice(idx, 1);
+  persist();
+  populateAllSelects();
+  renderListEditor();
+  addLog('ADMIN LISTA', '—', `Lista "${key}": eliminado "${removed}"`);
+}
+
+function resetList(key) {
+  if (!confirm('¿Restaurar lista "' + (LIST_LABELS[key]||key) + '" a los valores por defecto?')) return;
+  LISTS[key] = JSON.parse(JSON.stringify(DEFAULT_LISTS[key] || []));
+  persist();
+  populateAllSelects();
+  renderListEditor();
+  addLog('ADMIN LISTA', '—', `Lista "${key}": restaurada`);
+  toast('Lista restaurada', 'ok');
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.className = '', 3000);
+}
+
+/* ═══════════════════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════════════════ */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// Patch newHoleModal button
+document.querySelector('[onclick="openModal(\'newHoleModal\')"]').addEventListener('click', openNewHoleModal);
+
+// Init section labels for export
+document.querySelectorAll('#exportSections label').forEach(lbl => {
+  const cb = lbl.querySelector('input');
+  if (cb && cb.checked) lbl.classList.add('checked');
+  cb && cb.addEventListener('change', () => lbl.classList.toggle('checked', cb.checked));
+});
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+loadPersisted();
+populateLoginDropdown();
+// Set credit date
+const cd = document.getElementById('creditDate');
+if (cd) cd.textContent = new Date().toLocaleDateString('es-PE', {year:'numeric',month:'long',day:'numeric'});
+</script>
+</body>
+</html>
