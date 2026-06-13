@@ -1227,27 +1227,39 @@ function loadCache() {
   }
 }
 
-/* ── API call helper ── */
-async function apiGet(params) {
+/* ── API call — TODO via GET para evitar preflight CORS ──
+   Google Apps Script no admite OPTIONS preflight para POST
+   con Content-Type: application/json desde orígenes externos.
+   Solución: codificar el payload como parámetro ?payload= en GET.
+   El Apps Script lo decodifica en doGet().
+── */
+async function apiCall(action, payload = {}) {
   if (!SHEETS_URL) throw new Error('URL no configurada');
-  const qs  = new URLSearchParams(params).toString();
-  const res = await fetch(SHEETS_URL + '?' + qs);
+
+  const base = SHEETS_URL.includes('?')
+    ? SHEETS_URL : SHEETS_URL;
+
+  const params = new URLSearchParams({
+    action,
+    payload: encodeURIComponent(JSON.stringify(payload)),
+  });
+
+  const url = base + (base.includes('?') ? '&' : '?') + params.toString();
+
+  const res = await fetch(url, {
+    method: 'GET',
+    redirect: 'follow',        // Apps Script redirige siempre
+  });
+
+  if (!res.ok) throw new Error('HTTP ' + res.status);
   const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'Error API');
+  if (!json.ok) throw new Error(json.error || 'Error en Apps Script');
   return json.data;
 }
 
-async function apiPost(payload) {
-  if (!SHEETS_URL) throw new Error('URL no configurada');
-  const res = await fetch(SHEETS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'Error API');
-  return json.data;
-}
+/* compatibilidad con llamadas existentes */
+async function apiGet(params)   { return apiCall(params.action || 'getAll', params); }
+async function apiPost(payload) { return apiCall(payload.action, payload); }
 
 /* ── Enqueue operation (works offline too) ── */
 function enqueue(payload) {
@@ -1259,12 +1271,15 @@ function enqueue(payload) {
 async function flushPending() {
   if (_syncing || !SHEETS_URL || !_syncPending.length) return;
   _syncing = true;
+  setSyncStatus('warn', `↻ Enviando ${_syncPending.length} cambios…`);
   const remaining = [];
   for (const op of _syncPending) {
     try {
-      await apiPost(op.payload);
+      const p = op.payload;
+      await apiCall(p.action, p);
     } catch(e) {
-      remaining.push(op);  // keep failed ops
+      console.warn('flush error:', e.message);
+      remaining.push(op);
     }
   }
   _syncPending = remaining;
@@ -1277,19 +1292,22 @@ async function flushPending() {
 async function loadFromSheets() {
   setSyncStatus('syncing', 'Conectando a Google Sheets…');
   try {
-    const data = await apiGet({ action: 'getAll' });
-    if (data.sondajes) HOLES  = data.sondajes;
-    if (data.listas)   LISTS  = Object.keys(data.listas).length ? data.listas : JSON.parse(JSON.stringify(DEFAULT_LISTS));
-    if (data.usuarios) USERS  = Object.keys(data.usuarios).length ? data.usuarios : JSON.parse(JSON.stringify(DEFAULT_USERS));
-    if (data.log)      actLog = data.log;
+    const data = await apiCall('getAll');
+    if (data.sondajes) HOLES = data.sondajes;
+    LISTS = (data.listas && Object.keys(data.listas).length)
+      ? data.listas : JSON.parse(JSON.stringify(DEFAULT_LISTS));
+    USERS = (data.usuarios && Object.keys(data.usuarios).length)
+      ? data.usuarios : JSON.parse(JSON.stringify(DEFAULT_USERS));
+    if (data.log) actLog = data.log;
     _online = true;
     saveCache();
-    setSyncStatus('ok', 'Sincronizado con Google Sheets');
+    setSyncStatus('ok', '✓ Sincronizado con Google Sheets');
     await flushPending();
     return true;
   } catch(e) {
+    console.warn('loadFromSheets:', e.message);
     _online = false;
-    setSyncStatus('warn', 'Sin conexión — usando caché local');
+    setSyncStatus('warn', '⚠ Sin conexión — caché local (' + e.message + ')');
     return false;
   }
 }
@@ -1351,7 +1369,7 @@ async function pushListas() {
 /* ── Push log entry to Sheets ── */
 async function pushLog(entry) {
   if (!SHEETS_URL) return;
-  try { await apiPost({ action: 'addLog', entry }); } catch(e) {}
+  try { await apiCall('addLog', { entry }); } catch(e) {}
 }
 
 /* ── User operations ── */
@@ -1573,7 +1591,7 @@ function clearLog() {
   actLog = [];
   saveCache();
   renderLogUI();
-  if (SHEETS_URL) apiPost({ action: 'clearLog' }).catch(()=>{});
+  if (SHEETS_URL) apiCall('clearLog').catch(()=>{});
   toast('Log limpiado', 'warn');
 }
 
@@ -3375,22 +3393,26 @@ function applySheetsUrl() {
 
 async function testSheetsConnection() {
   const url = document.getElementById('sheetsUrlInput').value.trim();
-  const res = document.getElementById('sheetsTestResult');
+  const res  = document.getElementById('sheetsTestResult');
   res.style.display = '';
   res.textContent = '⏳ Probando conexión…';
   res.style.color = 'var(--text2)';
   try {
-    const r = await fetch(url + '?action=getListas');
+    const testUrl = url + (url.includes('?') ? '&' : '?') +
+      'action=ping&payload=' + encodeURIComponent('{}');
+    const r = await fetch(testUrl, { method: 'GET', redirect: 'follow' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     const json = await r.json();
-    if (json.ok) {
-      res.textContent = '✅ Conexión exitosa con Google Sheets';
+    if (json.ok && json.data && json.data.pong) {
+      res.textContent = '✅ Conexión exitosa — Google Sheets listo';
       res.style.color = 'var(--ok)';
     } else {
-      res.textContent = '❌ Error: ' + (json.error || 'Respuesta inesperada');
-      res.style.color = 'var(--danger)';
+      res.textContent = '⚠️ Respuesta inesperada: ' + JSON.stringify(json).slice(0,80);
+      res.style.color = 'var(--warn)';
     }
   } catch(e) {
-    res.textContent = '❌ No se pudo conectar: ' + e.message;
+    res.textContent = '❌ Error: ' + e.message +
+      ' — Verifica que el Web App esté publicado como "Cualquier usuario"';
     res.style.color = 'var(--danger)';
   }
 }
