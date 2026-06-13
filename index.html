@@ -13,7 +13,7 @@
   --border:    #d8dce6;
   --border2:   #c4c9d8;
   --accent:    #1a5f9e;
-  --accent2:   #134982;
+  --accent2:    #134982;
   --accent-lt: #e8f0fb;
   --accent-dk: #124278;
   --ok:        #1a8a50;
@@ -111,18 +111,23 @@ main{flex:1;overflow:hidden;display:flex;flex-direction:column}
 .tbl-header{padding:10px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
 .tbl-header h3{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
 .tbl-scroll{overflow-x:auto;max-height:400px;overflow-y:auto}
-table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{background:var(--surface3);color:var(--text3);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:8px 8px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:2}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+thead th{background:var(--surface3);color:var(--text3);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:8px 8px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:sticky;top:0;z-index:2}
 tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 tbody tr:hover{background:var(--accent-lt)}
 tbody tr.row-error{background:#fff5f5;border-left:3px solid var(--danger)}
 tbody tr.row-warn{background:#fffbf0;border-left:3px solid #f0b429}
-tbody td{padding:0;vertical-align:middle}
-tbody td input,tbody td select{border:none;border-radius:0;background:transparent;padding:5px 7px;font-size:12px;width:100%;height:100%;min-width:60px}
+tbody td{padding:0;vertical-align:middle;overflow:hidden}
+tbody td input,tbody td select{border:none;border-radius:0;background:transparent;padding:5px 7px;font-size:12px;width:100%;height:100%;min-width:0;box-sizing:border-box;word-break:break-word}
 tbody td input:focus,tbody td select:focus{background:var(--accent-lt);box-shadow:inset 0 0 0 1.5px var(--accent);border-radius:3px;position:relative;z-index:1}
 td.computed{background:var(--ok-lt);color:var(--ok);font-family:var(--mono);font-size:11px;padding:5px 7px;white-space:nowrap;font-weight:700}
 td.computed.bad{background:var(--danger-lt);color:var(--danger)}
-td.td-act{text-align:center;padding:3px 5px;width:30px}
+td.td-act{text-align:center;padding:3px 5px;width:30px;flex-shrink:0}
+/* Prevent numeric/date inputs from collapsing on small screens */
+tbody td input[type="number"]{min-width:55px}
+tbody td input[type="date"]{min-width:120px}
+tbody td input[type="text"]{min-width:80px;word-break:break-all}
+tbody td select{min-width:60px}
 .btn-add-row{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1.5px dashed var(--border2);color:var(--text2);padding:8px 14px;cursor:pointer;font-size:12px;width:100%;border-radius:0 0 7px 7px;transition:all .15s;font-weight:600}
 .btn-add-row:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-lt)}
 .err-banner{background:var(--danger-lt);border:1.5px solid #f5b7b1;border-radius:6px;padding:9px 14px;font-size:12px;color:var(--danger);margin-bottom:12px;display:none}
@@ -254,14 +259,14 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <!-- LOGIN FORM -->
     <div id="loginFormSection">
       <div class="field">
-        <label>Usuario</label>
+        <label for="loginUserSel">Usuario</label>
         <select id="loginUserSel" onchange="onLoginUserChange()">
           <option value="">— Seleccionar usuario —</option>
         </select>
         <span class="hint" id="loginRoleHint"></span>
       </div>
       <div class="field">
-        <label>Contraseña</label>
+        <label for="loginPwd">Contraseña</label>
         <input id="loginPwd" type="password" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
         <span class="error-msg" id="loginErr"></span>
       </div>
@@ -311,31 +316,41 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
      SHEETS CONFIG MODAL
 ══════════════════════════════════════════ -->
 <div class="modal-overlay" id="sheetsConfigModal">
-  <div class="modal" style="min-width:460px;max-width:560px">
+  <div class="modal" style="min-width:500px;max-width:600px">
     <button class="modal-close" onclick="closeModal('sheetsConfigModal')">✕</button>
     <h2>🔗 Configurar Google Sheets</h2>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:16px">
-      Pega aquí la URL de tu Google Apps Script Web App. Esta URL conecta la app con tu hoja de cálculo de Google Sheets.
-    </p>
-    <div class="field">
-      <label>URL del Web App <span class="req">*</span></label>
-      <input type="url" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:11px;font-family:var(--mono)">
-      <span class="hint">Extensiones → Apps Script → Implementar → Aplicación web → Copiar URL</span>
+
+    <div style="background:var(--ok-lt);border:1.5px solid #a9dfbf;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--ok)">
+      ✓ URL predeterminada configurada para CMMM — Bayóvar
     </div>
-    <div id="sheetsTestResult" style="margin-top:8px;font-size:12px;display:none"></div>
+
+    <div class="field">
+      <label for="sheetsUrlInput">URL del Web App</label>
+      <input type="url" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:11px;font-family:var(--mono)">
+      <span class="hint">URL actual: <span id="sheetsUrlCurrent" style="font-family:var(--mono);color:var(--ok)"></span></span>
+    </div>
+
+    <div id="sheetsTestResult" style="margin-top:8px;font-size:12px;display:none;white-space:pre-wrap"></div>
+
     <div class="action-row mt8">
       <button class="btn btn-secondary btn-sm" onclick="testSheetsConnection()">🔍 Probar conexión</button>
-      <button class="btn btn-primary" onclick="applySheetsUrl()">✔ Guardar URL</button>
+      <button class="btn btn-primary" onclick="applySheetsUrl()">✔ Cambiar URL</button>
+      <button class="btn btn-secondary" onclick="restoreDefaultUrl()">↺ Restaurar URL CMMM</button>
       <button class="btn btn-secondary" onclick="closeModal('sheetsConfigModal')">Cancelar</button>
     </div>
-    <div style="margin-top:14px;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text2)">
-      <b>Instrucciones rápidas:</b><br>
-      1. Abre Google Sheets → Extensiones → Apps Script<br>
-      2. Pega el contenido de <code>CoreLogging_AppsScript.js</code><br>
-      3. Ejecuta <code>initSheets()</code> una vez para crear las hojas<br>
-      4. Implementar → Nueva implementación → Aplicación web<br>
-      &nbsp;&nbsp;&nbsp;· Ejecutar como: <b>Yo</b> · Acceso: <b>Cualquier usuario</b><br>
-      5. Copia la URL y pégala aquí
+
+    <div class="sep" style="margin:14px 0"></div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">📋 Desplegar nuevo Apps Script</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.7;background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:12px">
+      <b>Si necesitas desplegar tu propio Apps Script:</b><br>
+      1. Abre <a href="https://sheets.google.com" target="_blank" style="color:var(--accent)">Google Sheets</a> → crea una hoja nueva<br>
+      2. Extensiones → Apps Script<br>
+      3. Borra el código existente y pega el archivo <code>CoreLogging_AppsScript.js</code><br>
+      4. Ejecuta <code>initSheets()</code> una vez (▶ Run) y acepta los permisos<br>
+      5. Implementar → Nueva implementación → Tipo: <b>Aplicación web</b><br>
+      &nbsp;&nbsp;&nbsp;· Ejecutar como: <b>Yo</b> &nbsp;·&nbsp; Acceso: <b>Cualquier usuario</b><br>
+      6. Copia la URL generada y pégala arriba
     </div>
   </div>
 </div>
@@ -344,21 +359,21 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <button class="modal-close" onclick="closeModal('newHoleModal')">✕</button>
     <h2>📋 Nuevo Sondaje</h2>
     <div class="field">
-      <label>Número de Sondaje <span class="req">*</span></label>
+      <label for="nh_id">Número de Sondaje <span class="req">*</span></label>
       <input id="nh_id" type="text" placeholder="BAY-26-DH-0061">
       <span class="error-msg" id="nhErr"></span>
     </div>
     <div class="field">
-      <label>Proyecto</label>
+      <label for="nh_proj">Proyecto</label>
       <select id="nh_proj"></select>
     </div>
     <div class="fgrid fgrid-2" style="gap:10px">
       <div class="field">
-        <label>Tipo Sondaje</label>
+        <label for="nh_tipo">Tipo Sondaje</label>
         <select id="nh_tipo"></select>
       </div>
       <div class="field">
-        <label>Diámetro</label>
+        <label for="nh_diam">Diámetro</label>
         <select id="nh_diam"></select>
       </div>
     </div>
@@ -499,48 +514,48 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <div class="card-title">📋 Datos Generales del Sondaje</div>
     <div class="fgrid fgrid-4">
       <div class="field">
-        <label>Proyecto <span class="req">*</span></label>
+        <label for="h_project">Proyecto <span class="req">*</span></label>
         <select id="h_project" onchange="syncBadge()"></select>
       </div>
       <div class="field sp2">
-        <label>Número de Sondaje <span class="req">*</span></label>
+        <label for="h_holenum">Número de Sondaje <span class="req">*</span></label>
         <input type="text" id="h_holenum" placeholder="BAY-26-DH-0060" oninput="syncBadge()" readonly style="background:var(--surface3);color:var(--accent);font-weight:700;font-family:var(--mono)">
         <span class="hint">Asignado automáticamente al crear el sondaje</span>
       </div>
       <div class="field">
-        <label>Fase</label>
+        <label for="h_fase">Fase</label>
         <select id="h_fase"></select>
       </div>
       <div class="field">
-        <label>Tipo de Sondaje</label>
+        <label for="h_tipo">Tipo de Sondaje</label>
         <select id="h_tipo"></select>
       </div>
       <div class="field">
-        <label>Diámetro</label>
+        <label for="h_diam">Diámetro</label>
         <select id="h_diam"></select>
       </div>
       <div class="field">
-        <label>Ubicación</label>
+        <label for="h_ubic">Ubicación</label>
         <select id="h_ubic"></select>
       </div>
       <div class="field">
-        <label>Plataforma</label>
+        <label for="h_plat">Plataforma</label>
         <input type="text" id="h_plat" placeholder="M48-134">
       </div>
       <div class="field">
-        <label>Azimuth (°)</label>
+        <label for="h_az">Azimuth (°)</label>
         <select id="h_az"></select>
       </div>
       <div class="field">
-        <label>Dip (°)</label>
+        <label for="h_dip">Dip (°)</label>
         <select id="h_dip"></select>
       </div>
       <div class="field">
-        <label>Profundidad Final (m)</label>
+        <label for="h_prof">Profundidad Final (m)</label>
         <input type="number" id="h_prof" step="0.01" placeholder="45.8" oninput="updateDepthBars()">
       </div>
       <div class="field">
-        <label>Is Completed</label>
+        <label for="h_completed">Is Completed</label>
         <select id="h_completed"><option value="Y">Sí (Y)</option><option value="N" selected>No (N)</option></select>
       </div>
     </div>
@@ -550,23 +565,23 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <div class="card-title">👤 Personal</div>
     <div class="fgrid fgrid-4">
       <div class="field">
-        <label>Geólogo</label>
+        <label for="h_geologo">Geólogo</label>
         <select id="h_geologo"></select>
       </div>
       <div class="field">
-        <label>Técnico Geología</label>
+        <label for="h_tec">Técnico Geología</label>
         <select id="h_tec"></select>
       </div>
       <div class="field">
-        <label>Cliente</label>
+        <label for="h_cliente">Cliente</label>
         <select id="h_cliente"></select>
       </div>
       <div class="field">
-        <label>Compañía</label>
+        <label for="h_cia">Compañía</label>
         <select id="h_cia"></select>
       </div>
       <div class="field">
-        <label>Empresa Perforación</label>
+        <label for="h_epf">Empresa Perforación</label>
         <select id="h_epf"></select>
       </div>
     </div>
@@ -576,19 +591,19 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <div class="card-title">📅 Fechas</div>
     <div class="fgrid fgrid-4">
       <div class="field">
-        <label>Fecha Inicio <span class="req">*</span></label>
+        <label for="h_inicio">Fecha Inicio <span class="req">*</span></label>
         <input type="date" id="h_inicio">
       </div>
       <div class="field">
-        <label>Fecha Fin</label>
+        <label for="h_fin">Fecha Fin</label>
         <input type="date" id="h_fin">
       </div>
       <div class="field">
-        <label>Fecha de Ingreso</label>
+        <label for="h_fing">Fecha de Ingreso</label>
         <input type="date" id="h_fing">
       </div>
       <div class="field">
-        <label>Número de Cajas</label>
+        <label for="h_cajas">Número de Cajas</label>
         <input type="number" id="h_cajas" min="0" placeholder="24">
       </div>
     </div>
@@ -598,31 +613,31 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <div class="card-title">📍 Coordenadas Collar</div>
     <div class="fgrid fgrid-4">
       <div class="field">
-        <label>Tipo</label>
+        <label for="c_type">Tipo</label>
         <select id="c_type"></select>
       </div>
       <div class="field">
-        <label>Grid / Datum</label>
+        <label for="c_grid">Grid / Datum</label>
         <select id="c_grid"></select>
       </div>
       <div class="field">
-        <label>Norte (m)</label>
+        <label for="c_north">Norte (m)</label>
         <input type="number" id="c_north" step="0.001" placeholder="9390000.000">
       </div>
       <div class="field">
-        <label>Este (m)</label>
+        <label for="c_east">Este (m)</label>
         <input type="number" id="c_east" step="0.001" placeholder="500000.000">
       </div>
       <div class="field">
-        <label>Elevación (m.s.n.m.)</label>
+        <label for="c_elev">Elevación (m.s.n.m.)</label>
         <input type="number" id="c_elev" step="0.01" placeholder="0.00">
       </div>
       <div class="field">
-        <label>Método Topográfico</label>
+        <label for="h_metodo_top">Método Topográfico</label>
         <select id="h_metodo_top"></select>
       </div>
       <div class="field sp2">
-        <label>Comentarios</label>
+        <label for="h_comments">Comentarios</label>
         <textarea id="h_comments" rows="2" placeholder="Observaciones generales…"></textarea>
       </div>
     </div>
@@ -893,12 +908,12 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <h2>🔀 Insertar Duplicado</h2>
     <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Selecciona la muestra PRI de referencia y el tipo de duplicado. El duplicado se insertará inmediatamente debajo.</p>
     <div class="field">
-      <label>Muestra PRI de referencia <span class="req">*</span></label>
+      <label for="dupRefSel">Muestra PRI de referencia <span class="req">*</span></label>
       <select id="dupRefSel" style="font-family:var(--mono)"></select>
       <span class="hint" id="dupRefHint"></span>
     </div>
     <div class="field">
-      <label>Tipo de duplicado <span class="req">*</span></label>
+      <label for="dupTipoSel">Tipo de duplicado <span class="req">*</span></label>
       <select id="dupTipoSel">
         <option value="TWS">TWS — Twin (segunda mitad del core)</option>
         <option value="DUP">DUP — Duplicado de campo (cuarteo)</option>
@@ -907,7 +922,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
       </select>
     </div>
     <div class="field">
-      <label>Observaciones</label>
+      <label for="dupObs">Observaciones</label>
       <input type="text" id="dupObs" placeholder="">
     </div>
     <div class="action-row mt8">
@@ -926,11 +941,11 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
     <h2>⚗️ Insertar Control / Estándar</h2>
     <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Selecciona la posición de referencia y el tipo de control. Se insertará debajo del intervalo seleccionado.</p>
     <div class="field">
-      <label>Insertar después de muestra <span class="req">*</span></label>
+      <label for="ctrlRefSel">Insertar después de muestra <span class="req">*</span></label>
       <select id="ctrlRefSel" style="font-family:var(--mono)"></select>
     </div>
     <div class="field">
-      <label>Tipo de control <span class="req">*</span></label>
+      <label for="ctrlTipoSel">Tipo de control <span class="req">*</span></label>
       <select id="ctrlTipoSel" onchange="onCtrlTipoChange()">
         <option value="CBK">CBK — Blanco de campo</option>
         <option value="CRM">CRM — Material de Referencia Certificado</option>
@@ -941,7 +956,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
       <select id="ctrlCrmSel"></select>
     </div>
     <div class="field">
-      <label>Observaciones</label>
+      <label for="ctrlObs">Observaciones</label>
       <input type="text" id="ctrlObs" placeholder="">
     </div>
     <div class="action-row mt8">
@@ -1043,12 +1058,12 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
   <div class="card">
     <div class="card-title">🔗 Conexión Google Sheets</div>
     <div class="flex-row" style="margin-bottom:10px;gap:8px;flex-wrap:wrap">
-      <code id="sheetsUrlDisplay" style="font-size:11px;background:var(--surface2);padding:4px 10px;border-radius:4px;border:1.5px solid var(--border);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sin configurar</code>
-      <button class="btn btn-primary btn-sm" onclick="openSheetsConfig()">⚙️ Configurar URL</button>
-      <button class="btn btn-secondary btn-sm" id="btnSync2" onclick="manualSync()">↻ Sincronizar ahora</button>
-      <button class="btn btn-danger btn-sm" onclick="resetLocalCache()" title="Borrar caché local y recargar desde Sheets">🗑 Limpiar caché</button>
+      <code id="sheetsUrlDisplay" style="font-size:10px;background:var(--surface2);padding:4px 10px;border-radius:4px;border:1.5px solid var(--border);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px">Sin configurar</code>
+      <button class="btn btn-primary btn-sm" onclick="openSheetsConfig()">⚙️ Configurar</button>
+      <button class="btn btn-secondary btn-sm" id="btnSync2" onclick="manualSync()">↻ Sincronizar</button>
+      <button class="btn btn-danger btn-sm" onclick="resetLocalCache()" title="Borrar caché local">🗑 Limpiar caché</button>
     </div>
-    <div id="syncStatusAdmin" style="font-size:11px;color:var(--text3)"></div>
+    <div id="syncStatusAdmin" style="font-size:11px;color:var(--text3)" id="syncStatusAdmin"></div>
   </div>
 
   <div class="card">
@@ -1065,7 +1080,10 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
         <option value="">— Seleccionar lista —</option>
       </select>
       <span class="chip" id="listHint"></span>
-      <button class="btn btn-primary btn-sm" id="btnSaveLists" onclick="saveListChanges()" style="margin-left:auto">💾 Guardar cambios en listas</button>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="saveListChanges()">💾 Guardar listas en Sheets</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetListasFromSheets()">☁ Recargar desde Sheets</button>
+      </div>
     </div>
     <div id="listEditorContainer"></div>
   </div>
@@ -1166,20 +1184,19 @@ let actLog = [];
    DEFAULT USERS
 ═══════════════════════════════════════════ */
 const DEFAULT_USERS = {
-  'admin': {
-    name: 'Administrador',
-    pwd: '1234',
-    role: 'admin',
-    active: true,
-    protected: true
-  }
+  'admin':       { name: 'Administrador',       pwd: '1234',   role: 'admin',   active: true },
+  'mzamora':     { name: 'Miguel Zamora',        pwd: 'geo123', role: 'geologo', active: true },
+  'jbancayan':   { name: 'Jimmy Bancayan',       pwd: 'geo123', role: 'geologo', active: true },
+  'kdelrosario': { name: 'Kathleen Del Rosario', pwd: 'tec123', role: 'tecnico', active: true },
+  'mdelrosario': { name: 'MDR - Técnico',        pwd: 'tec123', role: 'tecnico', active: true },
 };
 
 /* ═══════════════════════════════════════════
    GOOGLE SHEETS BACKEND — CONFIGURACIÓN
-   ── Pega aquí la URL de tu Web App de Apps Script ──
 ═══════════════════════════════════════════ */
-let SHEETS_URL = localStorage.getItem('clog_sheets_url') || '';
+const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwot4WPW34B5VdbpEqYo7fEKdeQ7tYql6QYKqUbs_iKn9jZK6N44h8PyDraqkrfO8Xjlw/exec';
+// localStorage puede sobreescribir la URL por defecto
+let SHEETS_URL = localStorage.getItem('clog_sheets_url') || DEFAULT_SHEETS_URL;
 
 /* ═══════════════════════════════════════════
    PERSISTENCE — Google Sheets + localStorage cache
@@ -1333,20 +1350,29 @@ async function loadFromSheets() {
   try {
     const data = await apiCall('getAll');
     if (data.sondajes) HOLES = data.sondajes;
-    LISTS = (data.listas && Object.keys(data.listas).length)
-      ? data.listas : JSON.parse(JSON.stringify(DEFAULT_LISTS));
-    USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
-    if (data.usuarios && Object.keys(data.usuarios).length){
-      Object.keys(data.usuarios).forEach(uid=>{
-        if(uid !== 'admin') USERS[uid] = data.usuarios[uid];
-      });
+    if (data.listas && Object.keys(data.listas).length >= 3) {
+      LISTS = data.listas;
+      // Ensure all default keys exist
+      Object.keys(DEFAULT_LISTS).forEach(k => { if (!LISTS[k]) LISTS[k] = DEFAULT_LISTS[k]; });
+    } else {
+      LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+    }
+    if (data.usuarios && Object.keys(data.usuarios).length > 0) {
+      USERS = data.usuarios;
+      if (!USERS.admin) USERS.admin = DEFAULT_USERS.admin;
+    } else {
+      USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
     }
     if (data.log) actLog = data.log;
     _online = true;
     saveCache();
-    // Always refresh login dropdown with real users from Sheets
-    populateLoginDropdown();
-    setSyncStatus('ok', '✓ Sincronizado con Google Sheets');
+    // Apply lists to all form selects
+    populateAllSelects();
+    // Only refresh login dropdown if the login modal is still visible (user hasn't logged in yet)
+    if (document.getElementById('loginModal')?.classList.contains('open')) {
+      populateLoginDropdown();
+    }
+    setSyncStatus('ok', '✓ Sincronizado — ' + new Date().toLocaleTimeString('es-PE'));
     await flushPending();
     return true;
   } catch(e) {
@@ -1481,68 +1507,40 @@ function showRegisterForm() {
   });
 }
 
-
-function isFirstRunConfiguration(){
-  return !SHEETS_URL || String(SHEETS_URL).trim()==='';
-}
-
-function enforceFirstRunLogin(){
-  if(!isFirstRunConfiguration()) return;
-
-  USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
-
-  const sel=document.getElementById('loginUserSel');
-  if(sel){
-    sel.innerHTML='';
-    sel.add(new Option('Administrador', 'admin'));
-    sel.value='admin';
-    sel.disabled=true;
-  }
-
-  const regBtn=document.getElementById('registerTabBtn');
-  if(regBtn) regBtn.style.display='none';
-}
-
 function populateLoginDropdown() {
   const sel = document.getElementById('loginUserSel');
   if (!sel) return;
 
-  const currentValue = sel.value;
-  const hadSelection = currentValue && currentValue !== '';
+  // CRITICAL: Never rebuild the dropdown if the login modal is not open.
+  // The select element persists in the DOM after login — rebuilding it
+  // causes flicker and loses context. If the user has already logged in,
+  // there is nothing to update.
+  const loginModal = document.getElementById('loginModal');
+  if (!loginModal?.classList.contains('open')) return;
 
-  const activeUsers = {};
+  // Snapshot the current selection before any DOM change
+  const currentVal = sel.value;
+
+  // Build new option list from current USERS
+  const newOpts = [{ value: '', text: '— Seleccionar usuario —' }];
   Object.keys(USERS).forEach(uid => {
     const u = USERS[uid];
-    if (u && u.active) activeUsers[uid] = u;
+    if (!u || !u.active) return;
+    newOpts.push({ value: uid, text: u.name + ' · ' + (ROLE_LABELS[u.role] || u.role) });
   });
 
-  if (!sel.options.length) {
-    sel.add(new Option('— Seleccionar usuario —', ''));
-  }
+  // Diff update: only touch the DOM if options actually changed
+  const existing = Array.from(sel.options).map(o => o.value + '|' + o.text).join(',');
+  const incoming = newOpts.map(o => o.value + '|' + o.text).join(',');
+  if (existing === incoming) return;  // identical — don't touch
 
-  const existing = new Map();
-  Array.from(sel.options).forEach(opt => {
-    if (opt.value) existing.set(opt.value, opt);
-  });
+  // Rebuild options
+  sel.innerHTML = '';
+  newOpts.forEach(o => sel.appendChild(new Option(o.text, o.value)));
 
-  Object.keys(activeUsers).forEach(uid => {
-    const u = activeUsers[uid];
-    const lbl = u.name + ' · ' + (ROLE_LABELS[u.role] || u.role);
-
-    if (existing.has(uid)) {
-      existing.get(uid).text = lbl;
-      existing.delete(uid);
-    } else {
-      sel.add(new Option(lbl, uid));
-    }
-  });
-
-  existing.forEach((opt) => {
-    if (opt.value !== currentValue) opt.remove();
-  });
-
-  if (hadSelection && activeUsers[currentValue]) {
-    sel.value = currentValue;
+  // Always restore the previous selection if it still exists in the new list
+  if (currentVal && newOpts.some(o => o.value === currentVal)) {
+    sel.value = currentVal;
   }
 }
 
@@ -1593,14 +1591,15 @@ function doLogin() {
   if (keys.length > 0) loadHole(keys[keys.length - 1]);
   updateSyncStatus();
   toast('Bienvenido, ' + u.name + ' (' + (ROLE_LABELS[u.role]||u.role) + ')', 'ok');
-  // Load fresh data from Sheets in background
+  // Load fresh data from Sheets in background (non-blocking)
   if (SHEETS_URL) {
     loadFromSheets().then(ok => {
       if (ok) {
-        populateLoginDropdown();   // refresh with real users from Sheets
+        // NOTE: populateLoginDropdown NOT called here — user is already logged in
+        // populateLoginDropdown() guards itself (only runs when modal is open)
         rebuildHoleDropdown();
         populateAllSelects();
-        populateListSelector();    // ensure listSelector has options
+        populateListSelector();
         renderHoleListAdmin();
         renderUserPreview();
         renderLogUI();
@@ -3347,20 +3346,17 @@ function markListsDirty() {
 }
 
 function saveListChanges() {
-  // 1. Persist LISTS to local cache
+  // 1. Save to local cache immediately
   saveCache();
 
-  // 2. Update all static <select> elements in the header form
+  // 2. Update header form selects
   populateAllSelects();
 
-  // 3. Re-render the list editor (updates the visible item list)
+  // 3. Re-render list editor panel
   renderListEditor();
 
-  // 4. If there's an active hole, snapshot current interval data into HOLES
-  //    then reload the hole — this regenerates interval rows with updated dropdowns.
-  //    We snapshot manually (without calling saveSection which has side-effects).
+  // 4. Snapshot and reload active hole so interval dropdowns refresh
   if (activeHole && HOLES[activeHole]) {
-    // Snapshot geo rows — remove Length from cols (it's computed, no input)
     const geoRows = collectTable('bodyGeo',
       ['From','To','Lito 1','LitoMod','Ore Zone','Ore Zone Mod',
        'Color','Intensidad de Color','Contacto','Granulometria','Fosiles',
@@ -3369,7 +3365,6 @@ function saveListChanges() {
     geoRows.forEach(r => { r.Length = (parseFloat(r.To) - parseFloat(r.From)).toFixed(3); });
     if (geoRows.length) HOLES[activeHole].geologia = geoRows;
 
-    // Snapshot muestreo rows — Ore Zone is in symb-oz div, not an input
     const mueOzValues = [];
     document.querySelectorAll('#bodyMue tr').forEach(tr => {
       const oz = tr.querySelector('td.symb-cell .symb-oz')?.textContent?.trim() || '';
@@ -3380,26 +3375,80 @@ function saveListChanges() {
        'Control Granulometria?','Fecha Muestreo','Peso Muestra',
        'parent sample number','Comentarios'],
       ['symb-cell','rn-cell']);
-    mueRows.forEach((r, i) => {
-      r['Ore Zone'] = mueOzValues[i] || '';
-      r['Length']   = (parseFloat(r.To) - parseFloat(r.From)).toFixed(3);
-    });
+    mueRows.forEach((r,i) => { r['Ore Zone'] = mueOzValues[i]||''; r.Length = (parseFloat(r.To)-parseFloat(r.From)).toFixed(3); });
     if (mueRows.length) HOLES[activeHole].muestreo = mueRows;
 
-    // Now reload — interval rows are rebuilt using fresh LISTS dropdowns
     loadHole(activeHole);
   }
 
-  // 5. Push listas to Sheets async (non-blocking)
-  pushListas();
-
-  // 6. Clear dirty flag
+  // 5. Clear dirty flag
   _listsDirty = false;
-  const b = document.getElementById('listUnsavedBadge');
-  if (b) b.style.display = 'none';
+  const badge = document.getElementById('listUnsavedBadge');
+  if (badge) badge.style.display = 'none';
 
-  addLog('ADMIN LISTA', '—', 'Cambios en listas guardados y aplicados');
-  toast('✅ Listas guardadas — dropdowns actualizados', 'ok');
+  // 6. Push to Sheets — show result in status
+  addLog('ADMIN LISTA', '—', 'Listas guardadas localmente y enviando a Sheets…');
+  toast('💾 Guardado local OK — sincronizando con Sheets…', 'warn');
+
+  if (!SHEETS_URL) {
+    toast('✅ Listas guardadas localmente (sin URL de Sheets configurada)', 'ok');
+    return;
+  }
+
+  // Direct POST — show explicit success/error
+  const body = JSON.stringify({ action: 'saveListas', data: LISTS });
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body,
+  })
+  .then(r => r.json())
+  .then(json => {
+    if (json.ok) {
+      addLog('ADMIN LISTA', '—', `Listas guardadas en Sheets (${Object.keys(LISTS).length} listas)`);
+      toast('✅ Listas guardadas en Google Sheets', 'ok');
+      document.getElementById('syncStatus').textContent = '✓ Listas sincronizadas';
+    } else {
+      toast('⚠ Error en Sheets: ' + (json.error || 'respuesta inválida'), 'err');
+      console.error('saveListas error:', json);
+    }
+  })
+  .catch(err => {
+    toast('⚠ No se pudo conectar a Sheets: ' + err.message, 'err');
+    console.error('saveListas fetch error:', err);
+    // Queue for later retry
+    enqueue({ action: 'saveListas', data: LISTS });
+    saveCache();
+  });
+}
+
+async function resetListasFromSheets() {
+  if (!SHEETS_URL) { toast('Configura la URL de Google Sheets primero.', 'warn'); return; }
+  if (!confirm('¿Recargar TODAS las listas desde Google Sheets?\nSe perderán los cambios locales no guardados.')) return;
+  toast('⏳ Cargando listas desde Sheets…', 'warn');
+  try {
+    const data = await apiCall('getListas');
+    if (data && Object.keys(data).length >= 5) {
+      LISTS = data;
+      // Ensure all default keys exist
+      Object.keys(DEFAULT_LISTS).forEach(k => { if (!LISTS[k]) LISTS[k] = DEFAULT_LISTS[k]; });
+      saveCache();
+      populateAllSelects();
+      renderListEditor();
+      populateListSelector();
+      if (activeHole && HOLES[activeHole]) loadHole(activeHole);
+      _listsDirty = false;
+      const badge = document.getElementById('listUnsavedBadge');
+      if (badge) badge.style.display = 'none';
+      addLog('ADMIN LISTA', '—', `Listas restablecidas desde Sheets (${Object.keys(LISTS).length} listas)`);
+      toast('✅ Listas recargadas desde Google Sheets', 'ok');
+    } else {
+      toast('⚠ Sheets devolvió listas vacías o incompletas', 'warn');
+    }
+  } catch(e) {
+    toast('❌ Error al cargar listas: ' + e.message, 'err');
+  }
 }
 
 function populateListSelector() {
@@ -3529,6 +3578,9 @@ function resetLocalCache() {
 
 function openSheetsConfig() {
   document.getElementById('sheetsUrlInput').value = SHEETS_URL || '';
+  document.getElementById('sheetsUrlCurrent').textContent =
+    SHEETS_URL === DEFAULT_SHEETS_URL ? 'URL CMMM (predeterminada)' :
+    SHEETS_URL ? SHEETS_URL.slice(0, 60) + '…' : 'Sin configurar';
   document.getElementById('sheetsTestResult').style.display = 'none';
   openModal('sheetsConfigModal');
 }
@@ -3539,8 +3591,16 @@ function applySheetsUrl() {
   setSheetsUrl(url);
   updateSheetsUrlDisplay();
   closeModal('sheetsConfigModal');
-  toast('URL guardada. Sincronizando…', 'ok');
+  toast('URL actualizada. Sincronizando…', 'ok');
   manualSync();
+}
+
+function restoreDefaultUrl() {
+  setSheetsUrl(DEFAULT_SHEETS_URL);
+  document.getElementById('sheetsUrlInput').value = DEFAULT_SHEETS_URL;
+  document.getElementById('sheetsUrlCurrent').textContent = 'URL CMMM (predeterminada)';
+  toast('URL restaurada a la predeterminada CMMM', 'ok');
+  updateSheetsUrlDisplay();
 }
 
 async function testSheetsConnection() {
@@ -3580,8 +3640,16 @@ async function testSheetsConnection() {
 function updateSheetsUrlDisplay() {
   const el = document.getElementById('sheetsUrlDisplay');
   if (!el) return;
-  el.textContent = SHEETS_URL || 'Sin configurar';
-  el.style.color = SHEETS_URL ? 'var(--ok)' : 'var(--text3)';
+  if (!SHEETS_URL) {
+    el.textContent = 'Sin configurar';
+    el.style.color = 'var(--text3)';
+  } else if (SHEETS_URL === DEFAULT_SHEETS_URL) {
+    el.textContent = '✓ URL CMMM Bayóvar (predeterminada)';
+    el.style.color = 'var(--ok)';
+  } else {
+    el.textContent = SHEETS_URL.slice(0, 70) + '…';
+    el.style.color = 'var(--accent)';
+  }
   updateSyncStatus();
 }
 
@@ -3589,25 +3657,14 @@ function updateSheetsUrlDisplay() {
    INIT
 ═══════════════════════════════════════════ */
 loadPersisted();
-  enforceFirstRunLogin();
 populateLoginDropdown();
 updateSheetsUrlDisplay();
 updateSyncStatus();
 // Set credit date
 const cd = document.getElementById('creditDate');
 if (cd) cd.textContent = new Date().toLocaleDateString('es-PE', {year:'numeric',month:'long',day:'numeric'});
-// Pre-load users from Sheets before login so the dropdown shows real users
-if (SHEETS_URL) {
-  apiCall('getUsuarios').then(data => {
-    if (data && Object.keys(data).length) {
-      USERS = data;
-      saveCache();
-      populateLoginDropdown();  // refresh with real users
-    }
-  }).catch(() => {});  // silently fall back to cache
-}
-// Flush any pending operations from previous session
-if (SHEETS_URL) setTimeout(() => flushPending(), 3000);
+// Flush any pending operations from previous session (delayed to not block UI)
+if (SHEETS_URL) setTimeout(() => flushPending(), 4000);
 // Periodic sync every 5 min
 setInterval(() => { if (SHEETS_URL && _online) flushPending(); }, 300000);
 </script>
