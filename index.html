@@ -1227,37 +1227,45 @@ function loadCache() {
   }
 }
 
-/* ── API call — TODO via GET para evitar preflight CORS ──
-   Google Apps Script no admite OPTIONS preflight para POST
-   con Content-Type: application/json desde orígenes externos.
-   Solución: codificar el payload como parámetro ?payload= en GET.
-   El Apps Script lo decodifica en doGet().
+/* ── API calls ─────────────────────────────────────────────────────
+   GET  → lecturas (getAll, getListas, getUsuarios, getLog, ping)
+          Sin CORS issue porque no hay preflight para GET simple.
+   POST → escrituras (save*, addLog, delete*, clear*)
+          Content-Type: text/plain → header "simple" → sin preflight OPTIONS.
+          Apps Script lee e.postData.contents sin importar Content-Type.
 ── */
+const READ_ACTIONS = new Set(['getAll','getListas','getUsuarios','getLog','ping','getSondajes']);
+
 async function apiCall(action, payload = {}) {
-  if (!SHEETS_URL) throw new Error('URL no configurada');
+  if (!SHEETS_URL) throw new Error('URL de Google Sheets no configurada');
 
-  const base = SHEETS_URL.includes('?')
-    ? SHEETS_URL : SHEETS_URL;
+  if (READ_ACTIONS.has(action)) {
+    // ── GET para lecturas ──
+    const url = SHEETS_URL + (SHEETS_URL.includes('?') ? '&' : '?') +
+                'action=' + encodeURIComponent(action);
+    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Error Apps Script');
+    return json.data;
 
-  const params = new URLSearchParams({
-    action,
-    payload: encodeURIComponent(JSON.stringify(payload)),
-  });
-
-  const url = base + (base.includes('?') ? '&' : '?') + params.toString();
-
-  const res = await fetch(url, {
-    method: 'GET',
-    redirect: 'follow',        // Apps Script redirige siempre
-  });
-
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'Error en Apps Script');
-  return json.data;
+  } else {
+    // ── POST para escrituras (text/plain evita preflight CORS) ──
+    const body = JSON.stringify({ action, ...payload });
+    const res  = await fetch(SHEETS_URL, {
+      method:   'POST',
+      redirect: 'follow',
+      headers:  { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body,
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Error Apps Script');
+    return json.data;
+  }
 }
 
-/* compatibilidad con llamadas existentes */
+/* shims de compatibilidad */
 async function apiGet(params)   { return apiCall(params.action || 'getAll', params); }
 async function apiPost(payload) { return apiCall(payload.action, payload); }
 
@@ -1267,18 +1275,18 @@ function enqueue(payload) {
   saveCache();
 }
 
-/* ── Flush pending queue ── */
+/* ── Flush pending write queue ── */
 async function flushPending() {
   if (_syncing || !SHEETS_URL || !_syncPending.length) return;
   _syncing = true;
-  setSyncStatus('warn', `↻ Enviando ${_syncPending.length} cambios…`);
+  setSyncStatus('warn', `↻ Enviando ${_syncPending.length} operaciones pendientes…`);
   const remaining = [];
   for (const op of _syncPending) {
     try {
-      const p = op.payload;
-      await apiCall(p.action, p);
+      const { action, ...rest } = op.payload;
+      await apiCall(action, rest);
     } catch(e) {
-      console.warn('flush error:', e.message);
+      console.warn('flush error:', e.message, op.payload.action);
       remaining.push(op);
     }
   }
@@ -1368,7 +1376,7 @@ async function pushListas() {
   try { await flushPending(); } catch(e) {}
 }
 
-/* ── Push log entry to Sheets ── */
+/* ── Push log entry to Sheets (fire-and-forget) ── */
 async function pushLog(entry) {
   if (!SHEETS_URL) return;
   try { await apiCall('addLog', { entry }); } catch(e) {}
@@ -3421,24 +3429,32 @@ async function testSheetsConnection() {
   const url = document.getElementById('sheetsUrlInput').value.trim();
   const res  = document.getElementById('sheetsTestResult');
   res.style.display = '';
-  res.textContent = '⏳ Probando conexión…';
+  res.textContent = '⏳ Probando conexión GET…';
   res.style.color = 'var(--text2)';
   try {
-    const testUrl = url + (url.includes('?') ? '&' : '?') +
-      'action=ping&payload=' + encodeURIComponent('{}');
-    const r = await fetch(testUrl, { method: 'GET', redirect: 'follow' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const json = await r.json();
-    if (json.ok && json.data && json.data.pong) {
-      res.textContent = '✅ Conexión exitosa — Google Sheets listo';
-      res.style.color = 'var(--ok)';
-    } else {
-      res.textContent = '⚠️ Respuesta inesperada: ' + JSON.stringify(json).slice(0,80);
-      res.style.color = 'var(--warn)';
-    }
+    // Test GET (ping)
+    const getUrl = url + (url.includes('?') ? '&' : '?') + 'action=ping';
+    const r1 = await fetch(getUrl, { method: 'GET', redirect: 'follow' });
+    if (!r1.ok) throw new Error('GET HTTP ' + r1.status);
+    const j1 = await r1.json();
+    if (!j1.ok || !j1.data?.pong) throw new Error('GET: respuesta inesperada');
+
+    // Test POST (write)
+    res.textContent = '⏳ Probando escritura POST…';
+    const r2 = await fetch(url, {
+      method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ action: 'ping' }),
+    });
+    if (!r2.ok) throw new Error('POST HTTP ' + r2.status);
+    const j2 = await r2.json();
+    if (!j2.ok) throw new Error('POST: ' + (j2.error || 'respuesta inesperada'));
+
+    res.textContent = '✅ Conexión GET y POST exitosa — Google Sheets listo';
+    res.style.color = 'var(--ok)';
   } catch(e) {
     res.textContent = '❌ Error: ' + e.message +
-      ' — Verifica que el Web App esté publicado como "Cualquier usuario"';
+      '\n→ Verifica que el Web App esté publicado como "Cualquier usuario"';
     res.style.color = 'var(--danger)';
   }
 }
