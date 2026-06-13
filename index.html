@@ -1166,11 +1166,13 @@ let actLog = [];
    DEFAULT USERS
 ═══════════════════════════════════════════ */
 const DEFAULT_USERS = {
-  'admin':       { name: 'Administrador',       pwd: '1234',   role: 'admin',   active: true },
-  'mzamora':     { name: 'Miguel Zamora',        pwd: 'geo123', role: 'geologo', active: true },
-  'jbancayan':   { name: 'Jimmy Bancayan',       pwd: 'geo123', role: 'geologo', active: true },
-  'kdelrosario': { name: 'Kathleen Del Rosario', pwd: 'tec123', role: 'tecnico', active: true },
-  'mdelrosario': { name: 'MDR - Técnico',        pwd: 'tec123', role: 'tecnico', active: true },
+  'admin': {
+    name: 'Administrador',
+    pwd: '1234',
+    role: 'admin',
+    active: true,
+    protected: true
+  }
 };
 
 /* ═══════════════════════════════════════════
@@ -1333,8 +1335,12 @@ async function loadFromSheets() {
     if (data.sondajes) HOLES = data.sondajes;
     LISTS = (data.listas && Object.keys(data.listas).length)
       ? data.listas : JSON.parse(JSON.stringify(DEFAULT_LISTS));
-    USERS = (data.usuarios && Object.keys(data.usuarios).length)
-      ? data.usuarios : JSON.parse(JSON.stringify(DEFAULT_USERS));
+    USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+    if (data.usuarios && Object.keys(data.usuarios).length){
+      Object.keys(data.usuarios).forEach(uid=>{
+        if(uid !== 'admin') USERS[uid] = data.usuarios[uid];
+      });
+    }
     if (data.log) actLog = data.log;
     _online = true;
     saveCache();
@@ -1473,6 +1479,28 @@ function showRegisterForm() {
   document.getElementById('reg_role').addEventListener('change', function() {
     document.getElementById('reg_adminCodeField').style.display = this.value === 'admin' ? '' : 'none';
   });
+}
+
+
+function isFirstRunConfiguration(){
+  return !SHEETS_URL || String(SHEETS_URL).trim()==='';
+}
+
+function enforceFirstRunLogin(){
+  if(!isFirstRunConfiguration()) return;
+
+  USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+
+  const sel=document.getElementById('loginUserSel');
+  if(sel){
+    sel.innerHTML='';
+    sel.add(new Option('Administrador', 'admin'));
+    sel.value='admin';
+    sel.disabled=true;
+  }
+
+  const regBtn=document.getElementById('registerTabBtn');
+  if(regBtn) regBtn.style.display='none';
 }
 
 function populateLoginDropdown() {
@@ -3561,6 +3589,7 @@ function updateSheetsUrlDisplay() {
    INIT
 ═══════════════════════════════════════════ */
 loadPersisted();
+  enforceFirstRunLogin();
 populateLoginDropdown();
 updateSheetsUrlDisplay();
 updateSyncStatus();
