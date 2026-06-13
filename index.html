@@ -200,6 +200,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
 .role-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
 .role-badge.admin{background:#fef3c7;color:#92400e}
 .role-badge.geologo{background:var(--ok-lt);color:var(--ok)}
+.role-badge.tecnico{background:#e8f0fb;color:#1a5f9e}
 .role-badge.inactivo{background:var(--danger-lt);color:var(--danger)}
 
 /* ── EXPORT MODAL ── */
@@ -237,24 +238,72 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
      LOGIN MODAL
 ══════════════════════════════════════════ -->
 <div class="modal-overlay open" id="loginModal">
-  <div class="modal" style="min-width:340px;max-width:380px">
+  <div class="modal" style="min-width:340px;max-width:390px">
     <div class="login-logo">
       <span class="ico">⬡</span>
       <h1>CORE LOGGING</h1>
-      <p>OreLogic S.A. · Bayóvar · Miski Mayo</p>
+      <p>Geología — CMMM · Bayóvar · Miski Mayo</p>
     </div>
-    <div class="field">
-      <label>Usuario</label>
-      <select id="loginUserSel" onchange="onLoginUserChange()">
-        <option value="">— Seleccionar usuario —</option>
-      </select>
+
+    <!-- toggle tabs -->
+    <div style="display:flex;gap:0;margin-bottom:18px;border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden">
+      <button id="loginTabBtn"    onclick="showLoginForm()"    style="flex:1;padding:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Iniciar sesión</button>
+      <button id="registerTabBtn" onclick="showRegisterForm()" style="flex:1;padding:8px;border:none;background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">Nuevo usuario</button>
     </div>
-    <div class="field">
-      <label>Contraseña</label>
-      <input id="loginPwd" type="password" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
-      <span class="error-msg" id="loginErr"></span>
+
+    <!-- LOGIN FORM -->
+    <div id="loginFormSection">
+      <div class="field">
+        <label>Usuario</label>
+        <select id="loginUserSel" onchange="onLoginUserChange()">
+          <option value="">— Seleccionar usuario —</option>
+        </select>
+        <span class="hint" id="loginRoleHint"></span>
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input id="loginPwd" type="password" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
+        <span class="error-msg" id="loginErr"></span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:6px;justify-content:center" onclick="doLogin()">Ingresar →</button>
     </div>
-    <button class="btn btn-primary" style="width:100%;margin-top:6px;justify-content:center" onclick="doLogin()">Ingresar</button>
+
+    <!-- REGISTER FORM -->
+    <div id="registerFormSection" style="display:none">
+      <div class="fgrid fgrid-2" style="gap:10px;margin-bottom:10px">
+        <div class="field" style="margin-bottom:0">
+          <label>Login (usuario) <span class="req">*</span></label>
+          <input type="text" id="reg_login" placeholder="m.apellido">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Nombre completo <span class="req">*</span></label>
+          <input type="text" id="reg_name" placeholder="Miguel Apellido">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Contraseña <span class="req">*</span></label>
+          <input type="password" id="reg_pwd" placeholder="Mín. 4 caracteres">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Confirmar contraseña <span class="req">*</span></label>
+          <input type="password" id="reg_pwd2" placeholder="Repetir">
+        </div>
+        <div class="field sp2" style="margin-bottom:0">
+          <label>Perfil</label>
+          <select id="reg_role">
+            <option value="tecnico">Técnico de Geología</option>
+            <option value="geologo">Geólogo</option>
+            <option value="admin">Administrador (requiere código)</option>
+          </select>
+        </div>
+        <div class="field sp2" id="reg_adminCodeField" style="display:none;margin-bottom:0">
+          <label>Código de autorización admin</label>
+          <input type="password" id="reg_adminCode" placeholder="Código de admin">
+        </div>
+      </div>
+      <span class="error-msg" id="regErr" style="display:block;margin-bottom:8px"></span>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRegister()">Crear cuenta →</button>
+      <p style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px">El admin puede gestionar usuarios desde la pestaña Admin</p>
+    </div>
   </div>
 </div>
 
@@ -359,7 +408,8 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
         <div class="field" style="margin-bottom:0">
           <label>Rol</label>
           <select id="nu_role">
-            <option value="geologo">Geólogo / Técnico</option>
+            <option value="tecnico">Técnico de Geología</option>
+            <option value="geologo">Geólogo</option>
             <option value="admin">Administrador</option>
           </select>
         </div>
@@ -965,12 +1015,15 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
   </div>
 
   <div class="card">
-    <div class="card-title">⚙️ Listas Configurables</div>
+    <div class="card-title">⚙️ Listas Configurables
+      <span id="listUnsavedBadge" style="display:none;background:var(--warn);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;margin-left:8px">● Sin guardar</span>
+    </div>
     <div class="flex-row" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <select id="listSelector" onchange="renderListEditor()" style="max-width:260px;font-weight:700">
         <option value="">— Seleccionar lista —</option>
       </select>
       <span class="chip" id="listHint"></span>
+      <button class="btn btn-primary btn-sm" id="btnSaveLists" onclick="saveListChanges()" style="margin-left:auto">💾 Guardar cambios en listas</button>
     </div>
     <div id="listEditorContainer"></div>
   </div>
@@ -1070,10 +1123,11 @@ let actLog = [];
    DEFAULT USERS
 ═══════════════════════════════════════════ */
 const DEFAULT_USERS = {
-  'admin': { name: 'Administrador', pwd: '1234', role: 'admin', active: true },
-  'mzamora': { name: 'Miguel Zamora', pwd: 'geo123', role: 'geologo', active: true },
-  'jbancayan': { name: 'Jimmy Bancayan', pwd: 'geo123', role: 'geologo', active: true },
-  'kdelrosario': { name: 'Kathleen Del Rosario', pwd: 'geo123', role: 'geologo', active: true },
+  'admin':       { name: 'Administrador',       pwd: '1234',   role: 'admin',   active: true },
+  'mzamora':     { name: 'Miguel Zamora',        pwd: 'geo123', role: 'geologo', active: true },
+  'jbancayan':   { name: 'Jimmy Bancayan',       pwd: 'geo123', role: 'geologo', active: true },
+  'kdelrosario': { name: 'Kathleen Del Rosario', pwd: 'tec123', role: 'tecnico', active: true },
+  'mdelrosario': { name: 'MDR - Técnico',        pwd: 'tec123', role: 'tecnico', active: true },
 };
 
 /* ═══════════════════════════════════════════
@@ -1111,22 +1165,55 @@ function loadPersisted() {
 }
 
 /* ═══════════════════════════════════════════
-   AUTH — USER LIST BASED
+   AUTH — LOGIN / REGISTER
 ═══════════════════════════════════════════ */
+const ROLE_LABELS = { admin: '★ Admin', geologo: 'Geólogo', tecnico: 'Técnico' };
+
+function showLoginForm() {
+  document.getElementById('loginFormSection').style.display = '';
+  document.getElementById('registerFormSection').style.display = 'none';
+  document.getElementById('loginTabBtn').style.background    = 'var(--accent)';
+  document.getElementById('loginTabBtn').style.color         = '#fff';
+  document.getElementById('registerTabBtn').style.background = 'var(--surface2)';
+  document.getElementById('registerTabBtn').style.color      = 'var(--text2)';
+}
+
+function showRegisterForm() {
+  document.getElementById('loginFormSection').style.display   = 'none';
+  document.getElementById('registerFormSection').style.display = '';
+  document.getElementById('registerTabBtn').style.background  = 'var(--accent)';
+  document.getElementById('registerTabBtn').style.color       = '#fff';
+  document.getElementById('loginTabBtn').style.background     = 'var(--surface2)';
+  document.getElementById('loginTabBtn').style.color          = 'var(--text2)';
+  // show/hide admin code field
+  document.getElementById('reg_role').addEventListener('change', function() {
+    document.getElementById('reg_adminCodeField').style.display = this.value === 'admin' ? '' : 'none';
+  });
+}
+
 function populateLoginDropdown() {
   const sel = document.getElementById('loginUserSel');
   sel.innerHTML = '<option value="">— Seleccionar usuario —</option>';
   Object.keys(USERS).forEach(uid => {
     const u = USERS[uid];
     if (!u.active) return;
-    const opt = new Option(u.name + (u.role === 'admin' ? ' ★' : ''), uid);
-    sel.appendChild(opt);
+    const lbl = u.name + ' · ' + (ROLE_LABELS[u.role] || u.role);
+    sel.appendChild(new Option(lbl, uid));
   });
 }
 
 function onLoginUserChange() {
   document.getElementById('loginErr').textContent = '';
   document.getElementById('loginPwd').value = '';
+  const uid = document.getElementById('loginUserSel').value;
+  const hint = document.getElementById('loginRoleHint');
+  if (uid && USERS[uid]) {
+    const role = USERS[uid].role;
+    hint.textContent = 'Perfil: ' + (ROLE_LABELS[role] || role);
+    hint.style.color = role === 'admin' ? 'var(--warn)' : role === 'geologo' ? 'var(--ok)' : 'var(--accent)';
+  } else {
+    hint.textContent = '';
+  }
 }
 
 function doLogin() {
@@ -1144,14 +1231,14 @@ function doLogin() {
   currentRole = u.role;
   document.getElementById('userLabel').textContent = u.name;
   document.getElementById('userAvatar').textContent = u.name.charAt(0).toUpperCase();
-  document.getElementById('adminUserChip').textContent = u.name + ' · ' + u.role;
+  document.getElementById('adminUserChip').textContent = u.name + ' · ' + (ROLE_LABELS[u.role] || u.role);
   closeModal('loginModal');
   document.getElementById('holeSelectorBar').style.display = 'flex';
   if (u.role === 'admin') {
     document.getElementById('tab-admin').style.display = '';
     document.getElementById('btnClearLog').style.display = '';
   }
-  addLog('LOGIN', '—', 'Inicio de sesión como ' + u.role + ' (' + uid + ')');
+  addLog('LOGIN', '—', 'Inicio de sesión como ' + (ROLE_LABELS[u.role]||u.role) + ' (' + uid + ')');
   rebuildHoleDropdown();
   populateAllSelects();
   populateListSelector();
@@ -1160,7 +1247,42 @@ function doLogin() {
   renderUserPreview();
   const keys = Object.keys(HOLES);
   if (keys.length > 0) loadHole(keys[keys.length - 1]);
-  toast('Bienvenido, ' + u.name, 'ok');
+  toast('Bienvenido, ' + u.name + ' (' + (ROLE_LABELS[u.role]||u.role) + ')', 'ok');
+}
+
+function doRegister() {
+  const login = document.getElementById('reg_login').value.trim();
+  const name  = document.getElementById('reg_name').value.trim();
+  const pwd   = document.getElementById('reg_pwd').value;
+  const pwd2  = document.getElementById('reg_pwd2').value;
+  const role  = document.getElementById('reg_role').value;
+  const code  = document.getElementById('reg_adminCode').value;
+  const err   = document.getElementById('regErr');
+
+  if (!login)           { err.textContent = 'El nombre de usuario es requerido.'; return; }
+  if (!name)            { err.textContent = 'El nombre completo es requerido.'; return; }
+  if (pwd.length < 4)   { err.textContent = 'La contraseña debe tener al menos 4 caracteres.'; return; }
+  if (pwd !== pwd2)     { err.textContent = 'Las contraseñas no coinciden.'; return; }
+  if (USERS[login])     { err.textContent = 'Ya existe un usuario con ese login.'; return; }
+  if (role === 'admin' && code !== '1234') {
+    err.textContent = 'Código de autorización admin incorrecto.'; return;
+  }
+  USERS[login] = { name, pwd, role, active: true };
+  persist();
+  populateLoginDropdown();
+  addLog('REGISTRO', '—', `Nuevo usuario auto-registrado: ${login} (${role})`);
+  err.textContent = '';
+  // Clear fields and switch to login
+  document.getElementById('reg_login').value  = '';
+  document.getElementById('reg_name').value   = '';
+  document.getElementById('reg_pwd').value    = '';
+  document.getElementById('reg_pwd2').value   = '';
+  showLoginForm();
+  // Pre-select the new user
+  const sel = document.getElementById('loginUserSel');
+  sel.value = login;
+  onLoginUserChange();
+  toast('Cuenta creada. Ahora inicia sesión.', 'ok');
 }
 
 function doLogout() {
@@ -2396,11 +2518,11 @@ function renderUserTable() {
     <tr>
       <td style="font-family:var(--mono);font-weight:700">${uid}</td>
       <td>${u.name}</td>
-      <td><span class="role-badge ${u.role}">${u.role === 'admin' ? '★ Admin' : 'Geólogo'}</span></td>
+      <td><span class="role-badge ${u.role}">${ROLE_LABELS[u.role]||u.role}</span></td>
       <td><span class="role-badge ${u.active ? 'geologo' : 'inactivo'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
       <td style="display:flex;gap:4px;padding:6px 8px">
-        <button class="btn btn-secondary btn-sm" onclick="resetUserPwd('${uid}')">🔑 Reset pwd</button>
-        ${uid !== 'admin' ? `<button class="btn ${u.active ? 'btn-danger' : 'btn-ok'} btn-sm" onclick="toggleUserActive('${uid}')">${u.active ? 'Desactivar' : 'Activar'}</button>` : ''}
+        <button class="btn btn-secondary btn-sm" onclick="resetUserPwd('${uid}')">🔑 Pwd</button>
+        ${uid !== 'admin' ? `<button class="btn ${u.active ? 'btn-danger' : 'btn-ok'} btn-sm" onclick="toggleUserActive('${uid}')">${u.active ? 'Desact.' : 'Activar'}</button>` : ''}
         ${uid !== 'admin' ? `<button class="btn-icon" onclick="deleteUser('${uid}')">🗑</button>` : ''}
       </td>
     </tr>`).join('');
@@ -2414,7 +2536,7 @@ function renderUserPreview() {
     <tr>
       <td style="font-family:var(--mono);font-weight:700">${uid}</td>
       <td>${u.name}</td>
-      <td><span class="role-badge ${u.role}">${u.role === 'admin' ? '★ Admin' : 'Geólogo'}</span></td>
+      <td><span class="role-badge ${u.role}">${ROLE_LABELS[u.role]||u.role}</span></td>
       <td><span class="role-badge ${u.active ? 'geologo' : 'inactivo'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
     </tr>`).join('');
 }
@@ -2833,29 +2955,63 @@ function deleteHole(id) {
 /* ═══════════════════════════════════════════
    ADMIN: LIST EDITOR
 ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   ADMIN: LIST EDITOR
+═══════════════════════════════════════════ */
+let _listsDirty = false;
+
+function markListsDirty() {
+  _listsDirty = true;
+  const b = document.getElementById('listUnsavedBadge');
+  if (b) b.style.display = '';
+}
+
+function saveListChanges() {
+  persist();
+  populateAllSelects();
+  // Reload active hole so interval dropdowns pick up new values
+  if (activeHole && HOLES[activeHole]) {
+    saveSection('geologia');   // snapshot current values first
+    saveSection('muestreo');
+    loadHole(activeHole);      // then reload with fresh dropdowns
+  }
+  _listsDirty = false;
+  const b = document.getElementById('listUnsavedBadge');
+  if (b) b.style.display = 'none';
+  addLog('ADMIN LISTA', '—', 'Cambios en listas guardados y aplicados');
+  toast('✅ Listas guardadas y dropdowns actualizados', 'ok');
+}
+
 function populateListSelector() {
   const sel = document.getElementById('listSelector');
+  if (!sel) return;
   sel.innerHTML = '<option value="">— Seleccionar lista —</option>';
-  Object.keys(LIST_LABELS).forEach(k => {
-    sel.appendChild(new Option(LIST_LABELS[k], k));
-  });
+  Object.keys(LIST_LABELS).forEach(k => sel.appendChild(new Option(LIST_LABELS[k], k)));
 }
 
 function renderListEditor() {
-  const key = document.getElementById('listSelector').value;
-  const c   = document.getElementById('listEditorContainer');
+  const key  = document.getElementById('listSelector').value;
+  const c    = document.getElementById('listEditorContainer');
   const hint = document.getElementById('listHint');
   if (!key) { c.innerHTML = ''; hint.textContent = ''; return; }
   hint.textContent = LIST_LABELS[key] || key;
-  const items = LISTS[key] || [];
+  const items = (LISTS[key] || []).slice();
   c.innerHTML = `
     <div class="list-editor">
       <div class="list-box" style="flex:1">
-        <h4>Valores actuales</h4>
+        <h4>Valores actuales <span style="color:var(--text3);font-weight:400">(${items.length})</span></h4>
         <ul class="list-items" id="listItems_${key}">
-          ${items.map((v,i) => `<li><span>${v}</span><button class="btn-icon" onclick="removeListItem('${key}',${i})">✕</button></li>`).join('')}
+          ${items.map((v,i) => `
+            <li>
+              <span style="font-family:var(--mono)">${v}</span>
+              <div style="display:flex;gap:4px">
+                ${i > 0 ? `<button class="btn-icon" onclick="moveListItem('${key}',${i},-1)" title="Subir" style="font-size:12px">▲</button>` : '<span style="width:22px"></span>'}
+                ${i < items.length-1 ? `<button class="btn-icon" onclick="moveListItem('${key}',${i},1)" title="Bajar" style="font-size:12px">▼</button>` : '<span style="width:22px"></span>'}
+                <button class="btn-icon" onclick="removeListItem('${key}',${i})" title="Eliminar">✕</button>
+              </div>
+            </li>`).join('')}
         </ul>
-        <div class="list-add">
+        <div class="list-add" style="margin-top:8px">
           <input type="text" id="newItemInput_${key}" placeholder="Nuevo valor…" onkeydown="if(event.key==='Enter')addListItem('${key}')">
           <button class="btn btn-primary btn-sm" onclick="addListItem('${key}')">+ Agregar</button>
         </div>
@@ -2863,6 +3019,9 @@ function renderListEditor() {
       <div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-start;padding-top:30px">
         <button class="btn btn-secondary btn-sm" onclick="resetList('${key}')">↺ Restaurar defecto</button>
       </div>
+    </div>
+    <div style="margin-top:10px;padding:8px 12px;background:var(--warn-lt);border:1.5px solid #ffcc80;border-radius:6px;font-size:11px;color:var(--warn)" id="listSaveReminder">
+      ⚠️ Recuerda hacer clic en <b>💾 Guardar cambios en listas</b> para que los cambios se apliquen en los formularios.
     </div>`;
 }
 
@@ -2873,31 +3032,38 @@ function addListItem(key) {
   if (!LISTS[key]) LISTS[key] = [];
   if (LISTS[key].includes(val)) { toast('Ya existe ese valor', 'warn'); return; }
   LISTS[key].push(val);
-  persist();
-  populateAllSelects();
+  markListsDirty();
   renderListEditor();
-  addLog('ADMIN LISTA', '—', `Lista "${key}": agregado "${val}"`);
-  toast('Agregado: ' + val, 'ok');
+  addLog('ADMIN LISTA', '—', `Lista "${key}": agregado "${val}" (pendiente guardar)`);
+  toast('Agregado: ' + val + ' — haz clic en Guardar para aplicar', 'warn');
 }
 
 function removeListItem(key, idx) {
   if (!confirm('¿Eliminar "' + LISTS[key][idx] + '"?')) return;
   const removed = LISTS[key][idx];
   LISTS[key].splice(idx, 1);
-  persist();
-  populateAllSelects();
+  markListsDirty();
   renderListEditor();
-  addLog('ADMIN LISTA', '—', `Lista "${key}": eliminado "${removed}"`);
+  addLog('ADMIN LISTA', '—', `Lista "${key}": eliminado "${removed}" (pendiente guardar)`);
+  toast('Eliminado — haz clic en Guardar para aplicar', 'warn');
+}
+
+function moveListItem(key, idx, dir) {
+  const arr = LISTS[key];
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  markListsDirty();
+  renderListEditor();
 }
 
 function resetList(key) {
   if (!confirm('¿Restaurar lista "' + (LIST_LABELS[key]||key) + '" a los valores por defecto?')) return;
   LISTS[key] = JSON.parse(JSON.stringify(DEFAULT_LISTS[key] || []));
-  persist();
-  populateAllSelects();
+  markListsDirty();
   renderListEditor();
-  addLog('ADMIN LISTA', '—', `Lista "${key}": restaurada`);
-  toast('Lista restaurada', 'ok');
+  addLog('ADMIN LISTA', '—', `Lista "${key}": restaurada (pendiente guardar)`);
+  toast('Restaurada — haz clic en Guardar para aplicar', 'warn');
 }
 
 /* ═══════════════════════════════════════════
