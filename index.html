@@ -3246,19 +3246,49 @@ function markListsDirty() {
 }
 
 function saveListChanges() {
-  persist();
-  pushListas();   // push to Sheets async
+  // 1. Persist LISTS to local cache
+  saveCache();
+
+  // 2. Update all static <select> elements in the header form
   populateAllSelects();
+
+  // 3. Re-render the list editor (updates the visible item list)
+  renderListEditor();
+
+  // 4. If there's an active hole, snapshot current interval data into HOLES
+  //    then reload the hole — this regenerates interval rows with updated dropdowns.
+  //    We snapshot manually (without calling saveSection which has side-effects).
   if (activeHole && HOLES[activeHole]) {
-    saveSection('geologia');
-    saveSection('muestreo');
+    // Snapshot geo rows
+    const geoRows = collectTable('bodyGeo',
+      ['From','To','Length','Lito 1','LitoMod','Ore Zone','Ore Zone Mod',
+       'Color','Intensidad de Color','Contacto','Granulometria','Fosiles',
+       'Tomar Densidad?','Se Muestrea?','Circuito?','% Vlls','Descripcion'],
+      ['symb-cell','rn-cell']);
+    if (geoRows.length) HOLES[activeHole].geologia = geoRows;
+
+    // Snapshot muestreo rows
+    const mueRows = collectTable('bodyMue',
+      ['Ore Zone','From','To','Length','Numero Muestra','Tipo de Muestra','Tipo de Control',
+       'Control Granulometria?','Fecha Muestreo','Peso Muestra',
+       'parent sample number','Comentarios'],
+      ['symb-cell','rn-cell']);
+    if (mueRows.length) HOLES[activeHole].muestreo = mueRows;
+
+    // Now reload — interval rows are rebuilt using fresh LISTS dropdowns
     loadHole(activeHole);
   }
+
+  // 5. Push listas to Sheets async (non-blocking)
+  pushListas();
+
+  // 6. Clear dirty flag
   _listsDirty = false;
   const b = document.getElementById('listUnsavedBadge');
   if (b) b.style.display = 'none';
+
   addLog('ADMIN LISTA', '—', 'Cambios en listas guardados y aplicados');
-  toast('✅ Listas guardadas y dropdowns actualizados', 'ok');
+  toast('✅ Listas guardadas — dropdowns actualizados', 'ok');
 }
 
 function populateListSelector() {
