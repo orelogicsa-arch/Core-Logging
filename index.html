@@ -308,8 +308,37 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
 </div>
 
 <!-- ══════════════════════════════════════════
-     NEW HOLE MODAL
+     SHEETS CONFIG MODAL
 ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="sheetsConfigModal">
+  <div class="modal" style="min-width:460px;max-width:560px">
+    <button class="modal-close" onclick="closeModal('sheetsConfigModal')">✕</button>
+    <h2>🔗 Configurar Google Sheets</h2>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px">
+      Pega aquí la URL de tu Google Apps Script Web App. Esta URL conecta la app con tu hoja de cálculo de Google Sheets.
+    </p>
+    <div class="field">
+      <label>URL del Web App <span class="req">*</span></label>
+      <input type="url" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:11px;font-family:var(--mono)">
+      <span class="hint">Extensiones → Apps Script → Implementar → Aplicación web → Copiar URL</span>
+    </div>
+    <div id="sheetsTestResult" style="margin-top:8px;font-size:12px;display:none"></div>
+    <div class="action-row mt8">
+      <button class="btn btn-secondary btn-sm" onclick="testSheetsConnection()">🔍 Probar conexión</button>
+      <button class="btn btn-primary" onclick="applySheetsUrl()">✔ Guardar URL</button>
+      <button class="btn btn-secondary" onclick="closeModal('sheetsConfigModal')">Cancelar</button>
+    </div>
+    <div style="margin-top:14px;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text2)">
+      <b>Instrucciones rápidas:</b><br>
+      1. Abre Google Sheets → Extensiones → Apps Script<br>
+      2. Pega el contenido de <code>CoreLogging_AppsScript.js</code><br>
+      3. Ejecuta <code>initSheets()</code> una vez para crear las hojas<br>
+      4. Implementar → Nueva implementación → Aplicación web<br>
+      &nbsp;&nbsp;&nbsp;· Ejecutar como: <b>Yo</b> · Acceso: <b>Cualquier usuario</b><br>
+      5. Copia la URL y pégala aquí
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="newHoleModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('newHoleModal')">✕</button>
@@ -428,6 +457,8 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
   </div>
   <div class="sp"></div>
   <div class="hole-badge" id="topHoleBadge">—</div>
+  <button class="btn" style="background:rgba(255,255,255,.18);color:#fff;font-size:12px;padding:5px 13px" id="btnSync" onclick="manualSync()">↻ Sincronizar</button>
+  <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;font-size:12px;padding:5px 10px" onclick="openSheetsConfig()" title="Configurar Google Sheets">🔗</button>
   <button class="btn" style="background:rgba(255,255,255,.18);color:#fff;font-size:12px;padding:5px 13px" onclick="openExportModal()">⬇ Exportar ZIP</button>
   <div class="user-pill" onclick="toggleUserMenu()">
     <div class="user-avatar" id="userAvatar">?</div>
@@ -1010,6 +1041,16 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
 <div class="panel" id="panel-admin">
 
   <div class="card">
+    <div class="card-title">🔗 Conexión Google Sheets</div>
+    <div class="flex-row" style="margin-bottom:10px;gap:8px;flex-wrap:wrap">
+      <code id="sheetsUrlDisplay" style="font-size:11px;background:var(--surface2);padding:4px 10px;border-radius:4px;border:1.5px solid var(--border);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sin configurar</code>
+      <button class="btn btn-primary btn-sm" onclick="openSheetsConfig()">⚙️ Configurar URL</button>
+      <button class="btn btn-secondary btn-sm" id="btnSync2" onclick="manualSync()">↻ Sincronizar ahora</button>
+    </div>
+    <div id="syncStatusAdmin" style="font-size:11px;color:var(--text3)"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title">🗂 Gestión de Sondajes</div>
     <div id="holeListAdmin" style="max-height:300px;overflow-y:auto"></div>
   </div>
@@ -1054,10 +1095,11 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
 <!-- ── STATUS BAR ── -->
 <div class="status-bar">
   <span><span class="st-dot" id="stDot"></span><span id="stMsg">Sin datos guardados</span></span>
+  <span id="syncStatus" style="color:var(--text3);font-size:11px">⚠ URL de Sheets no configurada</span>
   <span>Marc: <b id="stMarc">0</b></span>
   <span>Geo: <b id="stGeo">0</b></span>
   <span>Muestreo: <b id="stMue">0</b></span>
-  <span style="margin-left:auto;color:var(--text3)">v2.0 · OreLogic S.A.</span>
+  <span style="margin-left:auto;color:var(--text3)">v3.0 · OreLogic · CMMM</span>
 </div>
 
 <div id="toast"></div>
@@ -1131,36 +1173,221 @@ const DEFAULT_USERS = {
 };
 
 /* ═══════════════════════════════════════════
-   PERSISTENCE (localStorage)
+   GOOGLE SHEETS BACKEND — CONFIGURACIÓN
+   ── Pega aquí la URL de tu Web App de Apps Script ──
 ═══════════════════════════════════════════ */
-const LS_LISTS = 'clog_lists_v2';
-const LS_HOLES = 'clog_holes_v2';
-const LS_LOG   = 'clog_log_v2';
-const LS_USERS = 'clog_users_v2';
+let SHEETS_URL = localStorage.getItem('clog_sheets_url') || '';
 
-function persist() {
-  try {
-    localStorage.setItem(LS_LISTS, JSON.stringify(LISTS));
-    localStorage.setItem(LS_HOLES, JSON.stringify(HOLES));
-    localStorage.setItem(LS_LOG,   JSON.stringify(actLog));
-    localStorage.setItem(LS_USERS, JSON.stringify(USERS));
-  } catch(e) { console.warn('localStorage full', e); }
+/* ═══════════════════════════════════════════
+   PERSISTENCE — Google Sheets + localStorage cache
+═══════════════════════════════════════════ */
+const LS_CACHE   = 'clog_cache_v3';   // cache local del último estado
+const LS_PENDING = 'clog_pending_v3'; // operaciones pendientes de sync
+const LS_URL     = 'clog_sheets_url';
+
+let _syncPending = [];  // cola de operaciones pendientes
+let _online      = false;
+let _syncing     = false;
+
+/* ── Guardar URL del Web App ── */
+function setSheetsUrl(url) {
+  SHEETS_URL = url.trim();
+  localStorage.setItem(LS_URL, SHEETS_URL);
 }
 
-function loadPersisted() {
+/* ── Cache local ── */
+function saveCache() {
   try {
-    const ls = localStorage.getItem(LS_LISTS);
-    LISTS = ls ? JSON.parse(ls) : JSON.parse(JSON.stringify(DEFAULT_LISTS));
-    const lh = localStorage.getItem(LS_HOLES);
-    HOLES = lh ? JSON.parse(lh) : {};
-    const ll = localStorage.getItem(LS_LOG);
-    actLog = ll ? JSON.parse(ll) : [];
-    const lu = localStorage.getItem(LS_USERS);
-    USERS = lu ? JSON.parse(lu) : JSON.parse(JSON.stringify(DEFAULT_USERS));
+    localStorage.setItem(LS_CACHE, JSON.stringify({ LISTS, HOLES, actLog, USERS }));
+    localStorage.setItem(LS_PENDING, JSON.stringify(_syncPending));
+  } catch(e) { console.warn('cache write error', e); }
+}
+
+function loadCache() {
+  try {
+    const c = localStorage.getItem(LS_CACHE);
+    if (c) {
+      const d = JSON.parse(c);
+      LISTS  = d.LISTS  || JSON.parse(JSON.stringify(DEFAULT_LISTS));
+      HOLES  = d.HOLES  || {};
+      actLog = d.actLog || [];
+      USERS  = d.USERS  || JSON.parse(JSON.stringify(DEFAULT_USERS));
+    } else {
+      LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+      HOLES = {}; actLog = [];
+      USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+    }
+    const p = localStorage.getItem(LS_PENDING);
+    _syncPending = p ? JSON.parse(p) : [];
   } catch(e) {
     LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS));
     HOLES = {}; actLog = [];
     USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+    _syncPending = [];
+  }
+}
+
+/* ── API call helper ── */
+async function apiGet(params) {
+  if (!SHEETS_URL) throw new Error('URL no configurada');
+  const qs  = new URLSearchParams(params).toString();
+  const res = await fetch(SHEETS_URL + '?' + qs);
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Error API');
+  return json.data;
+}
+
+async function apiPost(payload) {
+  if (!SHEETS_URL) throw new Error('URL no configurada');
+  const res = await fetch(SHEETS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Error API');
+  return json.data;
+}
+
+/* ── Enqueue operation (works offline too) ── */
+function enqueue(payload) {
+  _syncPending.push({ ts: Date.now(), payload });
+  saveCache();
+}
+
+/* ── Flush pending queue ── */
+async function flushPending() {
+  if (_syncing || !SHEETS_URL || !_syncPending.length) return;
+  _syncing = true;
+  const remaining = [];
+  for (const op of _syncPending) {
+    try {
+      await apiPost(op.payload);
+    } catch(e) {
+      remaining.push(op);  // keep failed ops
+    }
+  }
+  _syncPending = remaining;
+  saveCache();
+  _syncing = false;
+  updateSyncStatus();
+}
+
+/* ── Load all data from Sheets ── */
+async function loadFromSheets() {
+  setSyncStatus('syncing', 'Conectando a Google Sheets…');
+  try {
+    const data = await apiGet({ action: 'getAll' });
+    if (data.sondajes) HOLES  = data.sondajes;
+    if (data.listas)   LISTS  = Object.keys(data.listas).length ? data.listas : JSON.parse(JSON.stringify(DEFAULT_LISTS));
+    if (data.usuarios) USERS  = Object.keys(data.usuarios).length ? data.usuarios : JSON.parse(JSON.stringify(DEFAULT_USERS));
+    if (data.log)      actLog = data.log;
+    _online = true;
+    saveCache();
+    setSyncStatus('ok', 'Sincronizado con Google Sheets');
+    await flushPending();
+    return true;
+  } catch(e) {
+    _online = false;
+    setSyncStatus('warn', 'Sin conexión — usando caché local');
+    return false;
+  }
+}
+
+/* ── persist() — now enqueues to Sheets + saves local cache ── */
+function persist() {
+  saveCache();       // always save locally
+  updateSyncStatus();
+}
+
+/* ── Compatibility shim for old loadPersisted() calls ── */
+function loadPersisted() {
+  loadCache();  // synchronous local read, Sheets loaded async after login
+}
+
+/* ── Sync status UI ── */
+function setSyncStatus(type, msg) {
+  const el = document.getElementById('syncStatus');
+  const dot = document.getElementById('stDot');
+  if (!el) return;
+  el.textContent = msg;
+  if (dot) dot.className = 'st-dot' + (type === 'warn' ? ' warn' : type === 'err' ? ' warn' : '');
+}
+
+function updateSyncStatus() {
+  const pending = _syncPending.length;
+  if (!SHEETS_URL) {
+    setSyncStatus('warn', '⚠ URL de Google Sheets no configurada');
+  } else if (pending > 0) {
+    setSyncStatus('warn', `↻ ${pending} cambios pendientes de sync`);
+  } else if (_online) {
+    setSyncStatus('ok', '✓ Sincronizado con Google Sheets');
+  } else {
+    setSyncStatus('warn', '⚠ Modo offline — datos en caché local');
+  }
+}
+
+/* ── Save header to Sheets ── */
+async function pushHeader(holeId, headerObj) {
+  enqueue({ action: 'saveHeader', hole: holeId, data: headerObj });
+  saveCache();
+  try { await flushPending(); } catch(e) {}
+}
+
+/* ── Save section rows to Sheets ── */
+async function pushSection(holeId, section, rows) {
+  enqueue({ action: 'saveSection', hole: holeId, section, rows });
+  saveCache();
+  try { await flushPending(); } catch(e) {}
+}
+
+/* ── Save lists to Sheets ── */
+async function pushListas() {
+  enqueue({ action: 'saveListas', data: LISTS });
+  saveCache();
+  try { await flushPending(); } catch(e) {}
+}
+
+/* ── Push log entry to Sheets ── */
+async function pushLog(entry) {
+  if (!SHEETS_URL) return;
+  try { await apiPost({ action: 'addLog', entry }); } catch(e) {}
+}
+
+/* ── User operations ── */
+async function pushNewUser(uid, userData) {
+  enqueue({ action: 'saveUsuario', data: { uid, ...userData } });
+  saveCache();
+  try { await flushPending(); } catch(e) {}
+}
+
+async function pushUpdateUser(uid, changes) {
+  enqueue({ action: 'updateUsuario', uid, data: changes });
+  saveCache();
+  try { await flushPending(); } catch(e) {}
+}
+
+async function pushDeleteUser(uid) {
+  enqueue({ action: 'deleteUsuario', uid });
+  saveCache();
+  try { await flushPending(); } catch(e) {}
+}
+
+/* ── Manual sync button ── */
+async function manualSync() {
+  setSyncStatus('syncing', 'Sincronizando…');
+  document.getElementById('btnSync').textContent = '↻ Sincronizando…';
+  const ok = await loadFromSheets();
+  document.getElementById('btnSync').textContent = '↻ Sincronizar';
+  if (ok) {
+    rebuildHoleDropdown();
+    populateAllSelects();
+    renderHoleListAdmin();
+    renderUserPreview();
+    renderLogUI();
+    toast('Datos actualizados desde Google Sheets', 'ok');
+  } else {
+    toast('Sin conexión con Google Sheets', 'warn');
   }
 }
 
@@ -1247,7 +1474,22 @@ function doLogin() {
   renderUserPreview();
   const keys = Object.keys(HOLES);
   if (keys.length > 0) loadHole(keys[keys.length - 1]);
+  updateSyncStatus();
   toast('Bienvenido, ' + u.name + ' (' + (ROLE_LABELS[u.role]||u.role) + ')', 'ok');
+  // Load fresh data from Sheets in background
+  if (SHEETS_URL) {
+    loadFromSheets().then(ok => {
+      if (ok) {
+        rebuildHoleDropdown();
+        populateAllSelects();
+        renderHoleListAdmin();
+        renderUserPreview();
+        renderLogUI();
+        const ks = Object.keys(HOLES);
+        if (ks.length > 0 && !activeHole) loadHole(ks[ks.length - 1]);
+      }
+    });
+  }
 }
 
 function doRegister() {
@@ -1269,6 +1511,7 @@ function doRegister() {
   }
   USERS[login] = { name, pwd, role, active: true };
   persist();
+  pushNewUser(login, { name, pwd, role, active: true });
   populateLoginDropdown();
   addLog('REGISTRO', '—', `Nuevo usuario auto-registrado: ${login} (${role})`);
   err.textContent = '';
@@ -1300,15 +1543,17 @@ function toggleUserMenu() {
 ═══════════════════════════════════════════ */
 function addLog(action, hole, detail) {
   const entry = {
-    ts: new Date().toISOString(),
-    user: currentUser || '?',
-    hole: hole || activeHole || '—',
-    action: detail ? action + ': ' + detail : action
+    ts:     new Date().toISOString(),
+    user:   currentUser || '?',
+    hole:   hole || activeHole || '—',
+    action: detail ? action + ': ' + detail : action,
   };
   actLog.unshift(entry);
   if (actLog.length > 500) actLog = actLog.slice(0, 500);
+  saveCache();
   renderLogUI();
   updateBadge('log', actLog.length);
+  pushLog(entry);  // async, non-blocking
 }
 
 function renderLogUI() {
@@ -1325,7 +1570,10 @@ function renderLogUI() {
 
 function clearLog() {
   if (!confirm('¿Limpiar todo el log de actividad?')) return;
-  actLog = []; persist(); renderLogUI();
+  actLog = [];
+  saveCache();
+  renderLogUI();
+  if (SHEETS_URL) apiPost({ action: 'clearLog' }).catch(()=>{});
   toast('Log limpiado', 'warn');
 }
 
@@ -1349,7 +1597,7 @@ function createNewHole() {
   const id = document.getElementById('nh_id').value.trim();
   if (!id) { document.getElementById('nhErr').textContent = 'Campo requerido.'; return; }
   if (HOLES[id]) { document.getElementById('nhErr').textContent = 'Ya existe ese sondaje.'; return; }
-  HOLES[id] = {
+  const holeData = {
     header: {
       'Hole number': id,
       Project: document.getElementById('nh_proj').value,
@@ -1358,7 +1606,12 @@ function createNewHole() {
     },
     marcacion: [], geologia: [], muestreo: [], densidad: []
   };
+  HOLES[id] = holeData;
   persist();
+  // Push to Sheets
+  enqueue({ action: 'createHole', id, data: holeData.header });
+  pushHeader(id, holeData.header);
+  flushPending().catch(()=>{});
   addLog('CREAR SONDAJE', id, 'Sondaje creado');
   closeModal('newHoleModal');
   rebuildHoleDropdown();
@@ -2422,6 +2675,7 @@ function saveHeader() {
   };
   HOLES[activeHole].header = h;
   persist();
+  pushHeader(activeHole, h);
   addLog('GUARDAR HEADER', activeHole, 'Header actualizado');
   setStatus('Header guardado — ' + activeHole);
   updateDepthBars();
@@ -2484,6 +2738,7 @@ function saveSection(section) {
   }
   HOLES[activeHole][section] = rows;
   persist();
+  pushSection(activeHole, section, rows);
   addLog('GUARDAR ' + section.toUpperCase(), activeHole, rows.length + ' filas');
   setStatus(section.charAt(0).toUpperCase() + section.slice(1) + ' guardado');
   toast(section.charAt(0).toUpperCase() + section.slice(1) + ' guardado — ' + rows.length + ' filas', 'ok');
@@ -2555,6 +2810,7 @@ function addUser() {
 
   USERS[login] = { name, pwd, role, active: true };
   persist();
+  pushNewUser(login, { name, pwd, role, active: true });
   err.textContent = '';
   document.getElementById('nu_login').value = '';
   document.getElementById('nu_name').value  = '';
@@ -2569,6 +2825,7 @@ function toggleUserActive(uid) {
   if (!USERS[uid]) return;
   USERS[uid].active = !USERS[uid].active;
   persist();
+  pushUpdateUser(uid, { active: String(USERS[uid].active) });
   renderUserTable();
   populateLoginDropdown();
   addLog('ADMIN USUARIOS', '—', `Usuario ${uid}: ${USERS[uid].active ? 'activado' : 'desactivado'}`);
@@ -2579,6 +2836,7 @@ function deleteUser(uid) {
   if (!confirm(`¿Eliminar usuario "${uid}" (${USERS[uid]?.name})?`)) return;
   delete USERS[uid];
   persist();
+  pushDeleteUser(uid);
   renderUserTable();
   populateLoginDropdown();
   addLog('ADMIN USUARIOS', '—', `Usuario eliminado: ${uid}`);
@@ -2591,6 +2849,7 @@ function resetUserPwd(uid) {
   if (newPwd.length < 4) { toast('Mínimo 4 caracteres', 'warn'); return; }
   USERS[uid].pwd = newPwd;
   persist();
+  pushUpdateUser(uid, { pwd: newPwd });
   addLog('ADMIN USUARIOS', '—', `Contraseña reseteada: ${uid}`);
   toast('Contraseña actualizada para ' + uid, 'ok');
 }
@@ -2946,6 +3205,8 @@ function deleteHole(id) {
     document.getElementById('topHoleBadge').textContent = '—';
   }
   persist();
+  enqueue({ action: 'deleteHole', id });
+  flushPending().catch(()=>{});
   rebuildHoleDropdown();
   renderHoleListAdmin();
   addLog('ELIMINAR', id, 'Sondaje eliminado');
@@ -2968,12 +3229,12 @@ function markListsDirty() {
 
 function saveListChanges() {
   persist();
+  pushListas();   // push to Sheets async
   populateAllSelects();
-  // Reload active hole so interval dropdowns pick up new values
   if (activeHole && HOLES[activeHole]) {
-    saveSection('geologia');   // snapshot current values first
+    saveSection('geologia');
     saveSection('muestreo');
-    loadHole(activeHole);      // then reload with fresh dropdowns
+    loadHole(activeHole);
   }
   _listsDirty = false;
   const b = document.getElementById('listUnsavedBadge');
@@ -3094,13 +3355,68 @@ document.querySelectorAll('#exportSections label').forEach(lbl => {
 });
 
 /* ═══════════════════════════════════════════
+   SHEETS CONFIG UI FUNCTIONS
+═══════════════════════════════════════════ */
+function openSheetsConfig() {
+  document.getElementById('sheetsUrlInput').value = SHEETS_URL || '';
+  document.getElementById('sheetsTestResult').style.display = 'none';
+  openModal('sheetsConfigModal');
+}
+
+function applySheetsUrl() {
+  const url = document.getElementById('sheetsUrlInput').value.trim();
+  if (!url) { toast('Ingresa una URL válida.', 'warn'); return; }
+  setSheetsUrl(url);
+  updateSheetsUrlDisplay();
+  closeModal('sheetsConfigModal');
+  toast('URL guardada. Sincronizando…', 'ok');
+  manualSync();
+}
+
+async function testSheetsConnection() {
+  const url = document.getElementById('sheetsUrlInput').value.trim();
+  const res = document.getElementById('sheetsTestResult');
+  res.style.display = '';
+  res.textContent = '⏳ Probando conexión…';
+  res.style.color = 'var(--text2)';
+  try {
+    const r = await fetch(url + '?action=getListas');
+    const json = await r.json();
+    if (json.ok) {
+      res.textContent = '✅ Conexión exitosa con Google Sheets';
+      res.style.color = 'var(--ok)';
+    } else {
+      res.textContent = '❌ Error: ' + (json.error || 'Respuesta inesperada');
+      res.style.color = 'var(--danger)';
+    }
+  } catch(e) {
+    res.textContent = '❌ No se pudo conectar: ' + e.message;
+    res.style.color = 'var(--danger)';
+  }
+}
+
+function updateSheetsUrlDisplay() {
+  const el = document.getElementById('sheetsUrlDisplay');
+  if (!el) return;
+  el.textContent = SHEETS_URL || 'Sin configurar';
+  el.style.color = SHEETS_URL ? 'var(--ok)' : 'var(--text3)';
+  updateSyncStatus();
+}
+
+/* ═══════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════ */
 loadPersisted();
 populateLoginDropdown();
+updateSheetsUrlDisplay();
+updateSyncStatus();
 // Set credit date
 const cd = document.getElementById('creditDate');
 if (cd) cd.textContent = new Date().toLocaleDateString('es-PE', {year:'numeric',month:'long',day:'numeric'});
+// Flush any pending operations from previous session
+if (SHEETS_URL) setTimeout(() => flushPending(), 2000);
+// Periodic sync every 5 min
+setInterval(() => { if (SHEETS_URL && _online) flushPending(); }, 300000);
 </script>
 </body>
 </html>
