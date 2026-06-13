@@ -277,7 +277,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
         </div>
         <div class="field" style="margin-bottom:0">
           <label>Nombre completo <span class="req">*</span></label>
-          <input type="text" id="reg_name" placeholder="Miguel Apellido">
+          <input type="text" id="reg_name" placeholder="Nombre Apellido">
         </div>
         <div class="field" style="margin-bottom:0">
           <label>Contraseña <span class="req">*</span></label>
@@ -428,7 +428,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
         </div>
         <div class="field" style="margin-bottom:0">
           <label>Nombre completo</label>
-          <input type="text" id="nu_name" placeholder="Miguel Apellido">
+          <input type="text" id="nu_name" placeholder="Nombre Apellido">
         </div>
         <div class="field" style="margin-bottom:0">
           <label>Contraseña</label>
@@ -1046,6 +1046,7 @@ tbody tr.row-dup:hover td,tbody tr.row-ctrl:hover td{background:var(--accent-lt)
       <code id="sheetsUrlDisplay" style="font-size:11px;background:var(--surface2);padding:4px 10px;border-radius:4px;border:1.5px solid var(--border);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sin configurar</code>
       <button class="btn btn-primary btn-sm" onclick="openSheetsConfig()">⚙️ Configurar URL</button>
       <button class="btn btn-secondary btn-sm" id="btnSync2" onclick="manualSync()">↻ Sincronizar ahora</button>
+      <button class="btn btn-danger btn-sm" onclick="resetLocalCache()" title="Borrar caché local y recargar desde Sheets">🗑 Limpiar caché</button>
     </div>
     <div id="syncStatusAdmin" style="font-size:11px;color:var(--text3)"></div>
   </div>
@@ -1208,22 +1209,50 @@ function loadCache() {
     const c = localStorage.getItem(LS_CACHE);
     if (c) {
       const d = JSON.parse(c);
-      LISTS  = d.LISTS  || JSON.parse(JSON.stringify(DEFAULT_LISTS));
-      HOLES  = d.HOLES  || {};
-      actLog = d.actLog || [];
-      USERS  = d.USERS  || JSON.parse(JSON.stringify(DEFAULT_USERS));
+      // Validate structure before using
+      if (d && typeof d === 'object') {
+        // LISTS: must have at least 5 known keys
+        if (d.LISTS && Object.keys(d.LISTS).length >= 5) {
+          LISTS = d.LISTS;
+          // Ensure all default keys exist
+          Object.keys(DEFAULT_LISTS).forEach(k => {
+            if (!LISTS[k]) LISTS[k] = DEFAULT_LISTS[k];
+          });
+        } else {
+          LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+        }
+        // HOLES: must be an object
+        HOLES = (d.HOLES && typeof d.HOLES === 'object') ? d.HOLES : {};
+        // actLog: must be an array
+        actLog = Array.isArray(d.actLog) ? d.actLog : [];
+        // USERS: must have at least admin
+        if (d.USERS && typeof d.USERS === 'object' && Object.keys(d.USERS).length > 0) {
+          USERS = d.USERS;
+          // Ensure admin always exists
+          if (!USERS.admin) USERS.admin = DEFAULT_USERS.admin;
+        } else {
+          USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+        }
+      } else {
+        throw new Error('invalid cache structure');
+      }
     } else {
-      LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS));
-      HOLES = {}; actLog = [];
-      USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+      LISTS  = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+      HOLES  = {};
+      actLog = [];
+      USERS  = JSON.parse(JSON.stringify(DEFAULT_USERS));
     }
     const p = localStorage.getItem(LS_PENDING);
     _syncPending = p ? JSON.parse(p) : [];
   } catch(e) {
-    LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS));
-    HOLES = {}; actLog = [];
-    USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+    console.warn('loadCache error:', e.message, '— using defaults');
+    LISTS  = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+    HOLES  = {};
+    actLog = [];
+    USERS  = JSON.parse(JSON.stringify(DEFAULT_USERS));
     _syncPending = [];
+    // Clear corrupt cache
+    try { localStorage.removeItem(LS_CACHE); } catch(_) {}
   }
 }
 
@@ -2713,15 +2742,14 @@ function saveSection(section) {
   if (section === 'marcacion') {
     const ok = validateIntervals('bodyMarc', 'marc');
     rows = collectTable('bodyMarc',
-      ['From','To','Length','Rec m','Rec %','Rec Geo','Rec Geo %','Comments'],
+      ['From','To','Rec m','Rec Geo','Comments'],
       ['rn-cell']);
-    // inject computed cols
     rows = rows.map(r => {
       const len = parseFloat(r.To) - parseFloat(r.From);
       const rm  = parseFloat(r['Rec m']) || 0;
       const rg  = parseFloat(r['Rec Geo']) || 0;
-      r.Length     = isNaN(len) ? '' : len.toFixed(3);
-      r['Rec %']   = len > 0 ? (rm / len * 100).toFixed(2) : '';
+      r.Length       = isNaN(len) ? '' : len.toFixed(3);
+      r['Rec %']     = len > 0 ? (rm / len * 100).toFixed(2) : '';
       r['Rec Geo %'] = len > 0 ? (rg / len * 100).toFixed(2) : '';
       return r;
     });
@@ -2729,7 +2757,7 @@ function saveSection(section) {
   } else if (section === 'geologia') {
     const ok = validateIntervals('bodyGeo', 'geo');
     rows = collectTable('bodyGeo',
-      ['From','To','Length','Lito 1','LitoMod','Ore Zone','Ore Zone Mod',
+      ['From','To','Lito 1','LitoMod','Ore Zone','Ore Zone Mod',
        'Color','Intensidad de Color','Contacto','Granulometria','Fosiles',
        'Tomar Densidad?','Se Muestrea?','Circuito?','% Vlls','Descripcion'],
       ['symb-cell','rn-cell']);
@@ -2739,13 +2767,22 @@ function saveSection(section) {
     });
     if (!ok && !confirm('Hay errores de intervalos. ¿Guardar de todas formas?')) return;
   } else if (section === 'muestreo') {
+    // Ore Zone is in symb-oz div (no input) — extract separately
+    const ozValues = [];
+    document.querySelectorAll('#bodyMue tr').forEach(tr => {
+      const oz = tr.querySelector('td.symb-cell .symb-oz')?.textContent?.trim() || '';
+      ozValues.push(oz === '—' ? '' : oz);
+    });
+    // Cols = only cells that have inputs (skip: rn-cell, symb-cell, computed/Length, td-act)
+    // After skip: From, To, NMuestra, TipoMuestra, TipoControl, CtrlGran, Fecha, Peso, Padre, Comentarios
     rows = collectTable('bodyMue',
-      ['Ore Zone','From','To','Length','Numero Muestra','Tipo de Muestra','Tipo de Control',
+      ['From','To','Numero Muestra','Tipo de Muestra','Tipo de Control',
        'Control Granulometria?','Fecha Muestreo','Peso Muestra',
        'parent sample number','Comentarios'],
       ['symb-cell','rn-cell']);
-    rows = rows.map(r => {
-      r.Length = (parseFloat(r.To) - parseFloat(r.From)).toFixed(3);
+    rows = rows.map((r, i) => {
+      r['Ore Zone'] = ozValues[i] || '';
+      r['Length']   = (parseFloat(r.To) - parseFloat(r.From)).toFixed(3);
       return r;
     });
   } else if (section === 'densidad') {
@@ -3175,11 +3212,11 @@ function loadExample() {
 
   document.getElementById('bodyMue').innerHTML = '';
   [
-    {From:'32.56',To:'32.66','Numero Muestra':'BAY-26-DH-0060-001','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'154'},
-    {From:'32.66',To:'32.76','Numero Muestra':'BAY-26-DH-0060-003','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'169'},
-    {From:'32.76',To:'32.86','Numero Muestra':'BAY-26-DH-0060-004','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'187'},
-    {From:'','To':'','Numero Muestra':'BAY-26-DH-0060-007','Tipo de Muestra':'Control','Tipo de Control':'BAY02-19','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':''},
-    {From:'32.86',To:'33.22','Numero Muestra':'BAY-26-DH-0060-005','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'737'},
+    {From:'32.56',To:'32.66','Ore Zone':'CA2','Numero Muestra':'BAY-26-DH-0060-001','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'154'},
+    {From:'32.66',To:'32.76','Ore Zone':'CA2','Numero Muestra':'BAY-26-DH-0060-003','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'169'},
+    {From:'32.76',To:'32.86','Ore Zone':'CA2','Numero Muestra':'BAY-26-DH-0060-004','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'187'},
+    {From:'',To:'','Ore Zone':'','Numero Muestra':'BAY-26-DH-0060-007','Tipo de Muestra':'Control','Tipo de Control':'BAY02-19','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':''},
+    {From:'32.86',To:'33.22','Ore Zone':'CA2','Numero Muestra':'BAY-26-DH-0060-005','Tipo de Muestra':'PRI','Tipo de Control':'','Control Granulometria?':'N','Fecha Muestreo':'2026-06-11','Peso Muestra':'737'},
   ].forEach(r => addMueRow(r));
 
   updateDepthBars();
@@ -3263,20 +3300,30 @@ function saveListChanges() {
   //    then reload the hole — this regenerates interval rows with updated dropdowns.
   //    We snapshot manually (without calling saveSection which has side-effects).
   if (activeHole && HOLES[activeHole]) {
-    // Snapshot geo rows
+    // Snapshot geo rows — remove Length from cols (it's computed, no input)
     const geoRows = collectTable('bodyGeo',
-      ['From','To','Length','Lito 1','LitoMod','Ore Zone','Ore Zone Mod',
+      ['From','To','Lito 1','LitoMod','Ore Zone','Ore Zone Mod',
        'Color','Intensidad de Color','Contacto','Granulometria','Fosiles',
        'Tomar Densidad?','Se Muestrea?','Circuito?','% Vlls','Descripcion'],
       ['symb-cell','rn-cell']);
+    geoRows.forEach(r => { r.Length = (parseFloat(r.To) - parseFloat(r.From)).toFixed(3); });
     if (geoRows.length) HOLES[activeHole].geologia = geoRows;
 
-    // Snapshot muestreo rows
+    // Snapshot muestreo rows — Ore Zone is in symb-oz div, not an input
+    const mueOzValues = [];
+    document.querySelectorAll('#bodyMue tr').forEach(tr => {
+      const oz = tr.querySelector('td.symb-cell .symb-oz')?.textContent?.trim() || '';
+      mueOzValues.push(oz === '—' ? '' : oz);
+    });
     const mueRows = collectTable('bodyMue',
-      ['Ore Zone','From','To','Length','Numero Muestra','Tipo de Muestra','Tipo de Control',
+      ['From','To','Numero Muestra','Tipo de Muestra','Tipo de Control',
        'Control Granulometria?','Fecha Muestreo','Peso Muestra',
        'parent sample number','Comentarios'],
       ['symb-cell','rn-cell']);
+    mueRows.forEach((r, i) => {
+      r['Ore Zone'] = mueOzValues[i] || '';
+      r['Length']   = (parseFloat(r.To) - parseFloat(r.From)).toFixed(3);
+    });
     if (mueRows.length) HOLES[activeHole].muestreo = mueRows;
 
     // Now reload — interval rows are rebuilt using fresh LISTS dropdowns
@@ -3316,10 +3363,10 @@ function renderListEditor() {
         <ul class="list-items" id="listItems_${key}">
           ${items.map((v,i) => `
             <li>
-              <span style="font-family:var(--mono)">${v}</span>
-              <div style="display:flex;gap:4px">
-                ${i > 0 ? `<button class="btn-icon" onclick="moveListItem('${key}',${i},-1)" title="Subir" style="font-size:12px">▲</button>` : '<span style="width:22px"></span>'}
-                ${i < items.length-1 ? `<button class="btn-icon" onclick="moveListItem('${key}',${i},1)" title="Bajar" style="font-size:12px">▼</button>` : '<span style="width:22px"></span>'}
+              <span style="font-family:var(--mono);flex:1">${v}</span>
+              <div style="display:flex;gap:2px;flex-shrink:0">
+                ${i > 0 ? `<button class="btn-icon" onclick="moveListItem('${key}',${i},-1)" title="Subir" style="font-size:11px;padding:2px 4px">▲</button>` : `<button class="btn-icon" style="opacity:0;cursor:default;padding:2px 4px">▲</button>`}
+                ${i < items.length-1 ? `<button class="btn-icon" onclick="moveListItem('${key}',${i},1)" title="Bajar" style="font-size:11px;padding:2px 4px">▼</button>` : `<button class="btn-icon" style="opacity:0;cursor:default;padding:2px 4px">▼</button>`}
                 <button class="btn-icon" onclick="removeListItem('${key}',${i})" title="Eliminar">✕</button>
               </div>
             </li>`).join('')}
@@ -3409,6 +3456,17 @@ document.querySelectorAll('#exportSections label').forEach(lbl => {
 /* ═══════════════════════════════════════════
    SHEETS CONFIG UI FUNCTIONS
 ═══════════════════════════════════════════ */
+function resetLocalCache() {
+  if (!confirm('¿Borrar caché local y recargar desde Google Sheets?\n\nEsto no elimina datos del servidor.')) return;
+  try {
+    localStorage.removeItem(LS_CACHE);
+    localStorage.removeItem(LS_PENDING);
+    // Also remove old v2 keys if present
+    ['clog_lists_v2','clog_holes_v2','clog_log_v2','clog_users_v2'].forEach(k => localStorage.removeItem(k));
+  } catch(e) {}
+  location.reload();
+}
+
 function openSheetsConfig() {
   document.getElementById('sheetsUrlInput').value = SHEETS_URL || '';
   document.getElementById('sheetsTestResult').style.display = 'none';
