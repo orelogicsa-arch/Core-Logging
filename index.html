@@ -1301,6 +1301,8 @@ async function loadFromSheets() {
     if (data.log) actLog = data.log;
     _online = true;
     saveCache();
+    // Always refresh login dropdown with real users from Sheets
+    populateLoginDropdown();
     setSyncStatus('ok', '✓ Sincronizado con Google Sheets');
     await flushPending();
     return true;
@@ -1498,8 +1500,10 @@ function doLogin() {
   if (SHEETS_URL) {
     loadFromSheets().then(ok => {
       if (ok) {
+        populateLoginDropdown();   // refresh with real users from Sheets
         rebuildHoleDropdown();
         populateAllSelects();
+        populateListSelector();    // ensure listSelector has options
         renderHoleListAdmin();
         renderUserPreview();
         renderLogUI();
@@ -1761,7 +1765,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'admin') { renderHoleListAdmin(); renderListEditor(); }
+  if (name === 'admin') { renderHoleListAdmin(); populateListSelector(); renderListEditor(); }
   if (name === 'log') renderLogUI();
   if (name === 'instrucciones' || name === 'creditos') renderLegends();
 }
@@ -2016,6 +2020,15 @@ function renumberRows(tbodyId) {
   });
 }
 
+/* ── Global mkSel: always includes current value so Sheets data displays correctly ── */
+function mkSel(listKey, val, extra='') {
+  const items = LISTS[listKey] || [];
+  // If val exists but isn't in the list, add it so it shows correctly
+  const opts = ['', ...(items.includes(val) || !val ? items : [val, ...items])];
+  return `<select ${extra}>${opts.map(o =>
+    `<option value="${o}" ${o===val?'selected':''}>${o||'—'}</option>`).join('')}</select>`;
+}
+
 function addMarcRow(data={}) {
   const tb  = document.getElementById('bodyMarc');
   const idx = tb.rows.length;
@@ -2113,12 +2126,6 @@ function addGeoRow(data={}) {
   const tb  = document.getElementById('bodyGeo');
   const idx = tb.rows.length;
   const prevTo = getLastTo('bodyGeo');
-  const L = LISTS;
-  const mkSel = (list, val, extra='') => {
-    const opts = ['', ...(L[list] || [])].map(o =>
-      `<option value="${o}" ${o===val?'selected':''}>${o||'—'}</option>`).join('');
-    return `<select ${extra}>${opts}</select>`;
-  };
   const ynopts = (val) => ['Y','N'].map(o => `<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
   const tr = document.createElement('tr');
   const lito = data['Lito 1'] || '';
@@ -2193,12 +2200,6 @@ function recalcGeoLen(tr, idx) {
 function addMueRow(data={}) {
   const tb  = document.getElementById('bodyMue');
   const idx = tb.rows.length;
-  const L   = LISTS;
-  const mkSel = (list, val, extra='') => {
-    const opts = ['', ...(L[list]||[])].map(o =>
-      `<option value="${o}" ${o===val?'selected':''}>${o||'—'}</option>`).join('');
-    return `<select ${extra}>${opts}</select>`;
-  };
   const tipo = data['Tipo de Muestra'] || 'PRI';
   const oz   = data['Ore Zone'] || '';
   const oc   = ozColor(oz);
@@ -2216,7 +2217,7 @@ function addMueRow(data={}) {
     <td><input type="date" value="${data['Fecha Muestreo']??''}"></td>
     <td><input type="number" value="${data['Peso Muestra']??''}" step="0.1" min="0"></td>
     <td><input type="text" value="${data['parent sample number']??''}" style="min-width:140px"></td>
-    <td><input type="text" value="${(data['Comentarios ']||data['Comentarios'])||''}"></td>
+    <td><input type="text" value="${(data['Comentarios']||data['Comentarios '])||''}"></td>
     <td class="td-act"><button class="btn-icon" onclick="delRow(this,'bodyMue','muestreo')" title="Eliminar">✕</button></td>`;
   tb.appendChild(tr);
   // recalcMueLen now reads cols 2 (From) and 3 (To)
@@ -2452,12 +2453,6 @@ function insertControl() {
 
 /* shared row builder used by dup/ctrl (insert at position, not append) */
 function buildMueRow(data) {
-  const L   = LISTS;
-  const mkSel = (list, val, extra='') => {
-    const opts = ['', ...(L[list]||[])].map(o =>
-      `<option value="${o}" ${o===val?'selected':''}>${o||'—'}</option>`).join('');
-    return `<select ${extra}>${opts}</select>`;
-  };
   const tipo = data['Tipo de Muestra'] || 'PRI';
   const oz   = data['Ore Zone'] || '';
   const oc   = ozColor(oz);
@@ -3466,8 +3461,18 @@ updateSyncStatus();
 // Set credit date
 const cd = document.getElementById('creditDate');
 if (cd) cd.textContent = new Date().toLocaleDateString('es-PE', {year:'numeric',month:'long',day:'numeric'});
+// Pre-load users from Sheets before login so the dropdown shows real users
+if (SHEETS_URL) {
+  apiCall('getUsuarios').then(data => {
+    if (data && Object.keys(data).length) {
+      USERS = data;
+      saveCache();
+      populateLoginDropdown();  // refresh with real users
+    }
+  }).catch(() => {});  // silently fall back to cache
+}
 // Flush any pending operations from previous session
-if (SHEETS_URL) setTimeout(() => flushPending(), 2000);
+if (SHEETS_URL) setTimeout(() => flushPending(), 3000);
 // Periodic sync every 5 min
 setInterval(() => { if (SHEETS_URL && _online) flushPending(); }, 300000);
 </script>
