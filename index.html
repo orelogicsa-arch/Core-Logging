@@ -2443,6 +2443,7 @@ function insertControl() {
   }
 
   updateBadge('muestreo', document.querySelectorAll('#bodyMue tr').length);
+  renumberRows('bodyMue');
   validateMuestras();
   closeModal('ctrlModal');
   addLog('INSERTAR CTRL', activeHole, `${tipoCtrl} insertado`);
