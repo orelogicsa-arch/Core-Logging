@@ -401,7 +401,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
       <div style="margin-top:8px;display:flex;gap:8px">
         <input id="list-new-val" placeholder="Nuevo valor…" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--radius);flex:1;font-size:.83rem">
         <button class="btn btn-info btn-sm" onclick="addListValue()">+ Agregar</button>
-        <button class="btn btn-secondary btn-sm" onclick="restoreListDefaults()">↺ Restaurar</button>
+        <button class="btn btn-secondary btn-sm" onclick="restoreListDefaults()" title="Actualiza desde Google Sheets (si hay conexión) o restaura valores por defecto">↺ Actualizar desde Sheets</button>
       </div>
     </div>
   </div>
@@ -1583,11 +1583,33 @@ function removeListValue(key,idx){
   l[key].splice(idx,1);lsSet('cl_lists',l);loadListEditor();
   gsSyncList(key, l[key]);
 }
-function restoreListDefaults(){
+async function restoreListDefaults(){
   const key=document.getElementById('admin-list-sel').value;
-  const l=getLists();l[key]=[...(DEFAULT_LISTS[key]||[])];
-  lsSet('cl_lists',l);loadListEditor();populateHeaderDropdowns();toast(`Lista ${key} restaurada`);
-  gsSyncList(key, l[key]);
+  // Con conexión: traer esa lista específica desde Sheets (fuente de verdad)
+  if(GS_URL && gsOnline){
+    gsSetStatus('syncing');
+    toast(`↺ Actualizando lista "${key}" desde Sheets…`);
+    const r = await gsPost({action:'getList', key});
+    if(r?.ok && Array.isArray(r.values) && r.values.length > 0){
+      const l=getLists();
+      l[key]=[...r.values];
+      lsSet('cl_lists',l);
+      loadListEditor();populateHeaderDropdowns();
+      gsSetStatus('ok');
+      toast(`✓ Lista "${key}" actualizada desde Sheets (${r.values.length} valores)`);
+      return;
+    }
+    // Sheets respondió pero la lista está vacía
+    gsSetStatus('ok');
+    const motivo = r?.empty ? `La hoja L_${key} está vacía en Sheets` : (r?.msg || 'Sin datos en Sheets');
+    toast(`${motivo} — restaurando valores por defecto`,'warn');
+  }
+  // Sin Sheets o lista vacía: restaurar DEFAULT_LISTS del código
+  const l=getLists();
+  l[key]=[...(DEFAULT_LISTS[key]||[])];
+  lsSet('cl_lists',l);
+  loadListEditor();populateHeaderDropdowns();
+  toast(`Lista "${key}" restaurada a valores por defecto`);
 }
 function renderUsersAdmin(){
   const users=getUsers();
@@ -1801,7 +1823,7 @@ function setStatus(msg){document.getElementById('status-msg').textContent=msg;}
 // ═══════════════════════════════════════════════════
 
 // ▼▼▼ PEGAR AQUÍ LA URL DEL WEB APP DE GOOGLE APPS SCRIPT ▼▼▼
-const GS_URL = '';
+const GS_URL = 'https://script.google.com/macros/s/AKfycbxyAtppXfvAF_YuJOB-Y460iIl-qmp2NunnyerGiNx3ecBWW6JUXWmrd655BYzM9ezN/exec';
 // ▲▲▲ Ejemplo: 'https://script.google.com/macros/s/AKfycb.../exec' ▲▲▲
 
 let gsOnline = false;
