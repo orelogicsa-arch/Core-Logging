@@ -34,7 +34,7 @@
   --shadow:0 2px 12px rgba(0,0,0,.1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 html{height:100%}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:var(--surface3)}
@@ -116,16 +116,21 @@ html{height:100%}
 
 /* TABLES */
 .tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.06)}
-table{width:100%;border-collapse:collapse;font-size:.79rem}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
 thead{position:sticky;top:0;z-index:2}
-th{background:var(--blue);color:#fff;padding:7px 8px;text-align:left;white-space:nowrap;font-size:.7rem;text-transform:uppercase;letter-spacing:.4px}
-td{padding:4px 6px;border-bottom:1px solid var(--border2);vertical-align:middle;background:var(--surface)}
+th{background:var(--blue);color:#fff;padding:7px 8px;text-align:left;white-space:nowrap;font-size:.76rem;text-transform:uppercase;letter-spacing:.4px;border-right:1px solid rgba(255,255,255,.18)}
+th:last-child{border-right:none}
+td{padding:5px 6px;border-bottom:1px solid var(--border2);border-right:1px solid var(--border2);vertical-align:middle;background:var(--surface)}
+td:last-child{border-right:none}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--blue-xlight)}
-td input,td select{background:transparent;border:none;color:var(--text);font-size:.79rem;width:100%;padding:2px 4px;font-family:var(--font)}
+td input,td select{background:transparent;border:none;color:var(--text);font-size:.86rem;width:100%;padding:2px 4px;font-family:var(--font)}
+td input[type=number]{-moz-appearance:textfield}
+td input[type=number]::-webkit-outer-spin-button,
+td input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 td input:focus,td select:focus{outline:1px solid var(--blue2);border-radius:2px;background:var(--blue-xlight)}
-td.num{color:var(--text3);font-family:var(--mono);text-align:right;font-size:.75rem}
-td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
+td.num{color:var(--text3);font-family:var(--mono);text-align:right;font-size:.78rem}
+td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
 .row-error td{background:#fef2f2!important}
 .row-warn td{background:#fffbeb!important}
 .row-dup td{background:#f5f3ff!important}
@@ -237,7 +242,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
     <div class="form-group"><label>Técnico</label><select id="h-tecnico"></select></div>
     <div class="form-group"><label>Cliente</label><select id="h-cliente"></select></div>
     <div class="form-group"><label>Compañía</label><select id="h-compania"></select></div>
-    <div class="form-group"><label>Empresa Perforación</label><select id="h-perforadora"></select></div>
+    <div class="form-group"><label>Equipo de Perforación</label><select id="h-perforadora"></select></div>
   </div>
   <div class="section-title">Fechas</div>
   <div class="form-grid">
@@ -272,12 +277,11 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
     <span class="progress-text" id="marc-progress-text">0.0 / 0.0 m (0%)</span>
     <span class="chip chip-warn" id="marc-chip">Incompleto</span>
   </div>
-  <div id="marc-val-banner" class="val-banner" style="display:none"></div>
   <div class="btn-group">
-    <button class="btn btn-info btn-sm" onclick="addMarcRow()">+ Agregar fila</button>
     <button class="btn btn-secondary btn-sm" onclick="autoFillMarcacion()">⚡ Rellenar automático</button>
     <button class="btn btn-primary btn-sm" onclick="saveMarcacion()">💾 Guardar Marcación</button>
   </div>
+  <div id="marc-val-banner" class="val-banner" style="display:none"></div>
   <div class="tbl-wrap">
     <table>
       <thead><tr>
@@ -288,6 +292,9 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
       </tr></thead>
       <tbody id="marc-tbody"></tbody>
     </table>
+  </div>
+  <div class="btn-group" style="margin-top:8px;margin-bottom:0">
+    <button class="btn btn-info btn-sm" onclick="addMarcRow()">+ Agregar fila</button>
   </div>
 </div>
 
@@ -301,7 +308,6 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
   </div>
   <div id="geo-val-banner" class="val-banner" style="display:none"></div>
   <div class="btn-group">
-    <button class="btn btn-info btn-sm" onclick="addGeoRow()">+ Agregar fila</button>
     <button class="btn btn-primary btn-sm" onclick="saveGeologia()">💾 Guardar Geología</button>
   </div>
   <div class="tbl-wrap">
@@ -318,12 +324,14 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
       <tbody id="geo-tbody"></tbody>
     </table>
   </div>
+  <div class="btn-group" style="margin-top:8px;margin-bottom:0">
+    <button class="btn btn-info btn-sm" onclick="addGeoRow()">+ Agregar fila</button>
+  </div>
 </div>
 
 <!-- ══════════ MUESTREO ══════════ -->
 <div class="tab-panel" id="tab-muestreo">
   <div class="btn-group">
-    <button class="btn btn-info btn-sm" onclick="addMuestRow()">+ Agregar fila</button>
     <button class="btn btn-secondary btn-sm" onclick="importFromGeologiaMuest()">📥 Importar de Geología</button>
     <button class="btn btn-purple btn-sm" onclick="insertDupModal()">🔀 Insertar Duplicado</button>
     <button class="btn btn-success btn-sm" onclick="insertControlModal()">⚗️ Insertar Control/Estándar</button>
@@ -344,12 +352,14 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
       <tbody id="muest-tbody"></tbody>
     </table>
   </div>
+  <div class="btn-group" style="margin-top:8px;margin-bottom:0">
+    <button class="btn btn-info btn-sm" onclick="addMuestRow()">+ Agregar fila</button>
+  </div>
 </div>
 
 <!-- ══════════ DENSIDAD ══════════ -->
 <div class="tab-panel" id="tab-densidad">
   <div class="btn-group">
-    <button class="btn btn-info btn-sm" onclick="addDensRow()">+ Agregar fila</button>
     <button class="btn btn-secondary btn-sm" onclick="importFromGeologiaDens()">📥 Importar de Geología (DENS=Y)</button>
     <button class="btn btn-secondary btn-sm" onclick="autoNumDens()">⚡ Auto-numerar</button>
     <button class="btn btn-secondary btn-sm" onclick="fillFechasDens()">📅 Rellenar fechas</button>
@@ -368,6 +378,9 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.75rem}
       </tr></thead>
       <tbody id="dens-tbody"></tbody>
     </table>
+  </div>
+  <div class="btn-group" style="margin-top:8px;margin-bottom:0">
+    <button class="btn btn-info btn-sm" onclick="addDensRow()">+ Agregar fila</button>
   </div>
 </div>
 
@@ -1585,31 +1598,45 @@ function removeListValue(key,idx){
 }
 async function restoreListDefaults(){
   const key=document.getElementById('admin-list-sel').value;
-  // Con conexión: traer esa lista específica desde Sheets (fuente de verdad)
-  if(GS_URL && gsOnline){
-    gsSetStatus('syncing');
-    toast(`↺ Actualizando lista "${key}" desde Sheets…`);
-    const r = await gsPost({action:'getList', key});
-    if(r?.ok && Array.isArray(r.values) && r.values.length > 0){
-      const l=getLists();
-      l[key]=[...r.values];
-      lsSet('cl_lists',l);
-      loadListEditor();populateHeaderDropdowns();
-      gsSetStatus('ok');
-      toast(`✓ Lista "${key}" actualizada desde Sheets (${r.values.length} valores)`);
-      return;
-    }
-    // Sheets respondió pero la lista está vacía
-    gsSetStatus('ok');
-    const motivo = r?.empty ? `La hoja L_${key} está vacía en Sheets` : (r?.msg || 'Sin datos en Sheets');
-    toast(`${motivo} — restaurando valores por defecto`,'warn');
+  if(!GS_URL){
+    // Sin URL configurada: restaurar defaults del codigo
+    const l=getLists();
+    l[key]=[...(DEFAULT_LISTS[key]||[])];
+    lsSet('cl_lists',l);
+    loadListEditor();populateHeaderDropdowns();
+    toast(`Lista "${key}" restaurada a valores por defecto`);
+    return;
   }
-  // Sin Sheets o lista vacía: restaurar DEFAULT_LISTS del código
-  const l=getLists();
-  l[key]=[...(DEFAULT_LISTS[key]||[])];
-  lsSet('cl_lists',l);
-  loadListEditor();populateHeaderDropdowns();
-  toast(`Lista "${key}" restaurada a valores por defecto`);
+  // Intentar siempre si hay GS_URL, sin depender del estado gsOnline cached
+  gsSetStatus('syncing');
+  toast(`↺ Consultando Sheets para lista "${key}"…`);
+  const r = await gsPost({action:'getList', key});
+  if(r===null){
+    // Sin respuesta del servidor
+    gsSetStatus('error');
+    toast(`Sin respuesta de Sheets. Verifica la conexion`,'warn');
+    return;
+  }
+  if(r.ok && Array.isArray(r.values) && r.values.length > 0){
+    const l=getLists();
+    l[key]=[...r.values];
+    lsSet('cl_lists',l);
+    loadListEditor();populateHeaderDropdowns();
+    gsOnline=true;
+    gsSetStatus('ok');
+    toast(`✓ Lista "${key}" actualizada desde Sheets (${r.values.length} valores)`);
+    return;
+  }
+  // Sheets respondio pero lista vacia o error
+  gsOnline=true;
+  gsSetStatus('ok');
+  if(r.empty){
+    toast(`La hoja L_${key} esta vacia en Sheets — verifica que tenga datos`,'warn');
+  } else if(!r.ok){
+    toast(`Error Sheets: ${r.msg||'respuesta invalida'}`,'warn');
+  } else {
+    toast(`Sheets devolvio lista vacia para "${key}"`,'warn');
+  }
 }
 function renderUsersAdmin(){
   const users=getUsers();
@@ -1859,19 +1886,21 @@ function gsSetStatus(state) {
   }
 }
 
-// Envía un payload al Apps Script y devuelve la respuesta JSON
+// Envia payload al Apps Script. Siempre intenta si GS_URL esta configurada.
 async function gsPost(payload) {
   if (!GS_URL) return null;
   try {
     const res = await fetch(GS_URL, {
       method: 'POST',
-      headers: {'Content-Type': 'text/plain'}, // evita preflight CORS en Apps Script
+      headers: {'Content-Type': 'text/plain'},
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.json();
+    const json = await res.json();
+    console.log('[GS]', payload.action, '->', json.ok ? 'OK' : 'FAIL', json.msg||'');
+    return json;
   } catch (err) {
-    console.warn('[GS]', err.message);
+    console.warn('[GS] Error en', payload.action, ':', err.message);
     return null;
   }
 }
