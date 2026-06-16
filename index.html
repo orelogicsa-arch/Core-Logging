@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -687,7 +687,7 @@ function initLogin(){
   const us=getUsers().filter(u=>u.active);
   document.getElementById('login-user').innerHTML=us.map(u=>`<option value="${u.login}">${u.nombre} (${u.login})</option>`).join('');
 }
-function doLogin(){
+async function doLogin(){
   const login=document.getElementById('login-user').value;
   const pass=document.getElementById('login-pass').value;
   const user=getUsers().find(u=>u.login===login&&u.pass===pass&&u.active);
@@ -703,6 +703,11 @@ function doLogin(){
     document.getElementById('btn-clear-log').style.display='';
   }
   addLog('Login exitoso');
+  // Conectar a Sheets y descargar listas ANTES de poblar los selectores
+  // Si no hay conexión, usa las listas guardadas localmente (o DEFAULT_LISTS)
+  setStatus('Conectando con Google Sheets…');
+  await gsConnect();
+  // Ahora poblar con las listas actualizadas (locales o de Sheets)
   populateHoleSelector();
   populateHeaderDropdowns();
   buildOzLegend();
@@ -1796,7 +1801,7 @@ function setStatus(msg){document.getElementById('status-msg').textContent=msg;}
 // ═══════════════════════════════════════════════════
 
 // ▼▼▼ PEGAR AQUÍ LA URL DEL WEB APP DE GOOGLE APPS SCRIPT ▼▼▼
-const GS_URL = 'https://script.google.com/macros/s/AKfycbxyAtppXfvAF_YuJOB-Y460iIl-qmp2NunnyerGiNx3ecBWW6JUXWmrd655BYzM9ezN/exec';
+const GS_URL = '';
 // ▲▲▲ Ejemplo: 'https://script.google.com/macros/s/AKfycb.../exec' ▲▲▲
 
 let gsOnline = false;
@@ -1849,18 +1854,45 @@ async function gsPost(payload) {
   }
 }
 
-// Verifica conexión al iniciar (solo si GS_URL está configurada)
-async function gsPing() {
-  if (!GS_URL) { gsSetStatus('local'); return; }
+// Verifica conexión y descarga listas desde Sheets (fuente de verdad)
+// Devuelve true si pudo conectar
+async function gsConnect() {
+  if (!GS_URL) { gsSetStatus('local'); return false; }
   gsSetStatus('syncing');
   const r = await gsPost({action: 'ping'});
-  if (r?.ok) {
-    gsSetStatus('ok');
-    console.log('[GS] Conectado:', r.msg);
-  } else {
+  if (!r?.ok) {
     gsSetStatus('error');
     console.warn('[GS] Sin conexión a Google Sheets');
+    return false;
   }
+  gsOnline = true;
+  gsSetStatus('ok');
+  console.log('[GS] Conectado:', r.msg);
+  // Descargar listas desde Sheets y guardar localmente
+  await gsLoadLists();
+  return true;
+}
+
+// Descarga todas las listas desde Sheets y las persiste en localStorage
+async function gsLoadLists() {
+  if (!GS_URL || !gsOnline) return;
+  const r = await gsPost({action: 'getLists'});
+  if (!r?.ok || !r.lists) {
+    console.warn('[GS] No se pudieron cargar las listas desde Sheets');
+    return;
+  }
+  // Merge: solo actualiza claves que vengan en la respuesta (no borra claves locales extra)
+  const local = ls('cl_lists', {});
+  const merged = Object.assign({}, DEFAULT_LISTS, local, r.lists);
+  // Filtrar listas vacías que puedan venir del Sheet sin datos
+  Object.keys(merged).forEach(k => {
+    if (!Array.isArray(merged[k]) || merged[k].length === 0) {
+      merged[k] = DEFAULT_LISTS[k] || [];
+    }
+  });
+  lsSet('cl_lists', merged);
+  lsSet('gs_lists_ts', new Date().toISOString());
+  console.log('[GS] Listas sincronizadas desde Sheets:', Object.keys(r.lists).length, 'listas');
 }
 
 // Sincroniza el sondaje activo con Google Sheets
@@ -1898,18 +1930,22 @@ async function gsSyncLog() {
   }
 }
 
-// Sincroniza lista modificada con la hoja L_* correspondiente
+// Sube una lista a Sheets Y actualiza el localStorage local para que otros selectores la vean
 async function gsSyncList(key, values) {
   if (!GS_URL || !gsOnline) return;
   const r = await gsPost({action: 'saveList', key, values});
-  if (!r?.ok) console.warn('[GS] Error al sincronizar lista:', key, r?.msg);
+  if (r?.ok) {
+    console.log('[GS] Lista sincronizada:', key, '—', values.length, 'valores');
+  } else {
+    console.warn('[GS] Error al sincronizar lista:', key, r?.msg);
+  }
 }
 
 // INIT
 document.getElementById('btn-export-top').onclick=openExportModal;
 initLogin();
-// Verificar conexión a Sheets al cargar (no bloquea la app)
-gsPing();
+// Nota: la conexión a Sheets (gsConnect) se ejecuta dentro de doLogin()
+// para garantizar que las listas estén actualizadas antes de mostrar los selectores
 </script>
 </body>
 </html>
