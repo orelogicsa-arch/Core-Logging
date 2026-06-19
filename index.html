@@ -140,6 +140,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
 .row-warn td{background:#fffbeb!important}
 .row-dup td{background:#f5f3ff!important}
 .row-ctrl td{background:#f0fdf4!important}
+.row-muest td{background:#ecfdf5!important;border-left:3px solid var(--green)}
 
 /* Y/N colored */
 .yn-y{color:var(--green);font-weight:700}
@@ -209,6 +210,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   <span style="font-size:.82rem;color:var(--blue);font-weight:600">Sondaje activo:</span>
   <select id="hole-select" onchange="switchHole(this.value)"></select>
   <button id="btn-new-hole" onclick="newHoleModal()">+ Nuevo</button>
+  <button class="btn btn-secondary btn-sm" onclick="recoverFromSheetsModal()" title="Recuperar sondaje de Google Sheets" style="font-size:.78rem">☁ Recuperar de Sheets</button>
   <span class="hole-info" id="hole-info-text"></span>
 </div>
 
@@ -294,9 +296,10 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
     <table>
       <thead><tr>
         <th style="width:36px">#</th>
-        <th>From (m)</th><th>To (m)</th><th>Length</th>
-        <th>Rec m</th><th>Rec %</th><th>Rec Geo m</th><th>Rec Geo %</th>
-        <th>Comentarios</th><th style="width:40px"></th>
+        <th style="width:72px">From (m)</th><th style="width:72px">To (m)</th><th style="width:60px">Length</th>
+        <th style="width:72px">Rec m</th><th style="width:60px">Rec %</th>
+        <th style="width:80px">Rec Geo m</th><th style="width:72px">Rec Geo %</th>
+        <th>Comentarios</th><th style="width:44px"></th>
       </tr></thead>
       <tbody id="marc-tbody"></tbody>
     </table>
@@ -322,13 +325,15 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   <div class="tbl-wrap">
     <table>
       <thead><tr>
-        <th style="width:32px">#</th>
-        <th>From</th><th>To</th><th>Len</th><th>OZ</th>
-        <th>Lito 1</th><th>Lito Mod</th>
-        <th>Ore Zone</th><th>OZ Mod</th>
-        <th>Color</th><th>Intens.</th><th>Contacto</th><th>Gran.</th>
-        <th>Fós.</th><th>Dens?</th><th>Muest?</th>
-        <th>Descripción</th><th style="width:40px"></th>
+        <th style="width:36px">#</th>
+        <th style="width:72px">From</th><th style="width:72px">To</th><th style="width:52px">Len</th>
+        <th style="width:50px">OZ</th>
+        <th style="min-width:70px">Lito 1</th>
+        <th style="min-width:110px">Ore Zone</th>
+        <th style="width:70px">Color</th><th style="width:66px">Intens.</th>
+        <th style="width:80px">Contacto</th><th style="width:68px">Gran.</th>
+        <th style="width:58px">Fós.</th><th style="width:60px">Dens?</th><th style="width:60px">Muest?</th>
+        <th>Descripción</th><th style="width:44px"></th>
       </tr></thead>
       <tbody id="geo-tbody"></tbody>
     </table>
@@ -357,11 +362,13 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   <div class="tbl-wrap">
     <table>
       <thead><tr>
-        <th style="width:32px">#</th><th>OZ</th>
-        <th>From</th><th>To</th><th>Len</th>
-        <th>N° Muestra</th><th>Tipo Muestra</th><th>Tipo Control</th>
-        <th>N° M.Padre</th><th>Ctrl Gran?</th><th>Fecha</th><th>Peso (g)</th>
-        <th>Comentarios</th><th style="width:40px"></th>
+        <th style="width:36px">#</th><th style="width:30px">OZ</th>
+        <th style="width:72px">From</th><th style="width:72px">To</th><th style="width:52px">Len</th>
+        <th style="width:172px">N° Muestra</th><th style="width:90px">Tipo Muestra</th>
+        <th style="width:90px">Tipo Control</th>
+        <th style="width:172px">N° M.Padre</th><th style="width:56px">Ctrl Gran?</th>
+        <th style="width:130px">Fecha</th><th style="width:65px">Peso (g)</th>
+        <th>Comentarios</th><th style="width:44px"></th>
       </tr></thead>
       <tbody id="muest-tbody"></tbody>
     </table>
@@ -382,13 +389,21 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   <div class="tbl-wrap">
     <table>
       <thead><tr>
-        <th style="width:32px">#</th>
-        <th>From</th><th>To</th><th>Desde D.</th><th>Hasta D.</th>
-        <th>N° Muestra</th><th>Tipo</th><th>Fecha</th>
-        <th>P.Húm (g)</th><th>P.Seco (g)</th>
-        <th>L1</th><th>L2</th><th>L3</th><th>L4</th>
-        <th>D1</th><th>D2</th><th>D3</th><th>D4</th>
-        <th>Estado</th><th style="width:40px"></th>
+        <th style="width:36px">#</th>
+        <th style="width:72px">From</th>
+        <th style="width:72px">To</th>
+        <th style="width:78px">Desde D.</th>
+        <th style="width:78px">Hasta D.</th>
+        <th style="width:172px">N° Muestra</th>
+        <th style="width:78px">Tipo</th>
+        <th style="width:130px">Fecha</th>
+        <th style="width:94px">P.Húm (g)</th>
+        <th style="width:94px">P.Seco (g)</th>
+        <th style="width:62px">L1</th><th style="width:62px">L2</th>
+        <th style="width:62px">L3</th><th style="width:62px">L4</th>
+        <th style="width:62px">D1</th><th style="width:62px">D2</th>
+        <th style="width:62px">D3</th><th style="width:62px">D4</th>
+        <th style="width:100px">Estado</th><th style="width:44px"></th>
       </tr></thead>
       <tbody id="dens-tbody"></tbody>
     </table>
@@ -406,7 +421,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Sondaje</th><th>Acción</th></tr></thead>
+      <thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Sondaje</th><th>Acción</th><th>Equipo</th></tr></thead>
       <tbody id="log-tbody"></tbody>
     </table>
   </div>
@@ -644,6 +659,25 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
 </div>
 
+<!-- RECUPERAR DESDE SHEETS MODAL -->
+<div class="modal-overlay" id="modal-recover" style="display:none">
+  <div class="modal" style="min-width:420px">
+    <h2>☁ Recuperar sondaje de Google Sheets</h2>
+    <p style="font-size:.82rem;color:var(--text3);margin-bottom:14px">Descarga un sondaje almacenado en Sheets y lo carga en la app para continuar trabajando.</p>
+    <div id="recover-status" style="margin-bottom:10px;font-size:.82rem"></div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Sondaje en Sheets</label>
+      <select id="recover-hole-sel" style="width:100%"><option value="">— Consultando Sheets… —</option></select>
+    </div>
+    <div id="recover-info" style="background:var(--surface3);border-radius:6px;padding:10px;font-size:.8rem;color:var(--text2);margin-bottom:12px;display:none"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="doRecoverFromSheets()">⬇ Cargar sondaje</button>
+      <button class="btn btn-secondary btn-sm" onclick="refreshSheetsHoleList()">↺ Actualizar lista</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-recover')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- QAQC AUTO MODAL -->
 <div class="modal-overlay" id="modal-qaqc" style="display:none">
   <div class="modal" style="min-width:480px;max-width:600px">
@@ -758,9 +792,23 @@ function getHoles(){return ls('cl_holes',{});}
 function saveHole(id,data){const h=getHoles();h[id]=data;lsSet('cl_holes',h);}
 function deleteHoleData(id){const h=getHoles();delete h[id];lsSet('cl_holes',h);}
 function getLog(){return ls('cl_log',[]);}
-function addLog(action){
+// Get short device descriptor (OS + browser hint)
+function getDeviceDesc(){
+  const ua=navigator.userAgent;
+  const os=ua.match(/Windows NT|Mac OS X|Linux|Android|iPhone|iPad/i)?.[0]?.replace(' ','')?.replace('NT','')?.trim()||'';
+  const br=ua.includes('Chrome')?'Chrome':ua.includes('Firefox')?'Firefox':ua.includes('Safari')?'Safari':'Browser';
+  const host=window.location.hostname||'local';
+  return `${os}/${br}@${host}`;
+}
+function addLog(action, device){
   const log=getLog();
-  log.unshift({ts:new Date().toISOString(),user:currentUser?.login||'—',hole:currentHoleId||'—',action});
+  log.unshift({
+    ts:new Date().toISOString(),
+    user:currentUser?.login||'—',
+    hole:currentHoleId||'—',
+    action,
+    device:device||''
+  });
   if(log.length>500)log.length=500;
   lsSet('cl_log',log);
 }
@@ -981,14 +1029,14 @@ function addMarcRow(fromVal){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td class="num"></td>
-    <td><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcMarcRow(this);validateMarcacion()" style="width:68px"></td>
-    <td><input data-field="to" type="number" step="0.01" oninput="calcMarcRow(this);validateMarcacion()" style="width:68px"></td>
-    <td class="calc"><span data-field="length">—</span></td>
-    <td><input data-field="rec_m" type="number" step="0.01" oninput="calcMarcRow(this)" style="width:62px"></td>
+    <td style="width:72px"><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcMarcRow(this);validateMarcacion()" style="width:100%"></td>
+    <td style="width:72px"><input data-field="to" type="number" step="0.01" oninput="calcMarcRow(this);validateMarcacion()" style="width:100%"></td>
+    <td class="calc" style="width:52px"><span data-field="length">—</span></td>
+    <td><input data-field="rec_m" type="number" step="0.01" oninput="calcMarcRow(this)" style="width:100%"></td>
     <td class="calc"><span data-field="rec_pct">—</span></td>
-    <td><input data-field="rec_geo" type="number" step="0.01" oninput="calcMarcRow(this)" style="width:62px"></td>
+    <td><input data-field="rec_geo" type="number" step="0.01" oninput="calcMarcRow(this)" style="width:100%"></td>
     <td class="calc"><span data-field="rec_geo_pct">—</span></td>
-    <td><input data-field="comentarios" style="width:130px"></td>
+    <td><input data-field="comentarios" style="width:100%;min-width:100px"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'marc')">✕</button></td>`;
   tbody.appendChild(tr);
   reindex('marc');updateCounters();updateProgress();
@@ -1086,21 +1134,19 @@ function addGeoRow(fromVal){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td class="num"></td>
-    <td><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcGeoRow(this);validateGeologia()" style="width:100%"></td>
-    <td><input data-field="to" type="number" step="0.01" oninput="calcGeoRow(this);validateGeologia();checkGeoToRange(this)" style="width:100%"></td>
-    <td class="calc"><span data-field="length">—</span></td>
-    <td data-field="simb_cell" style="text-align:center;min-width:26px">${ozChip('')}</td>
-    <td><select data-field="lito1" style="width:100%">${mkSel('litologia',true)}</select></td>
-    <td><input data-field="lito_mod" style="width:100%"></td>
-    <td><select data-field="ore_zone" style="width:100%" onchange="onGeoOzChange(this)">${mkSel('ore_zone',true)}</select></td>
-    <td><select data-field="oz_mod" style="width:100%">${mkSel('ore_zone',true)}</select></td>
-    <td><select data-field="color" style="width:100%">${mkSel('color',true)}</select></td>
-    <td><select data-field="intensidad" style="width:100%">${mkSel('intensidad',true)}</select></td>
-    <td><select data-field="contacto" style="width:100%">${mkSel('contacto',true)}</select></td>
-    <td><select data-field="granulometria" style="width:100%">${mkSel('granulometria',true)}</select></td>
-    <td><select data-field="fosiles" style="width:100%">${mkSel('fosiles',true)}</select></td>
-    <td><select data-field="dens" style="width:100%" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
-    <td><select data-field="muestrea" style="width:100%" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
+    <td style="width:72px"><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcGeoRow(this);validateGeologia()" style="width:100%"></td>
+    <td style="width:72px"><input data-field="to" type="number" step="0.01" oninput="calcGeoRow(this);validateGeologia();checkGeoToRange(this)" style="width:100%"></td>
+    <td class="calc" style="width:52px"><span data-field="length">—</span></td>
+    <td data-field="simb_cell" style="text-align:center;width:50px">${ozChip('')}</td>
+    <td style="min-width:70px"><select data-field="lito1" style="width:100%">${mkSel('litologia',true)}</select></td>
+    <td style="min-width:110px"><select data-field="ore_zone" style="width:100%" onchange="onGeoOzChange(this);highlightGeoMuest(this)">${mkSel('ore_zone',true)}</select></td>
+    <td style="width:70px"><select data-field="color" style="width:100%">${mkSel('color',true)}</select></td>
+    <td style="width:66px"><select data-field="intensidad" style="width:100%">${mkSel('intensidad',true)}</select></td>
+    <td style="width:80px"><select data-field="contacto" style="width:100%">${mkSel('contacto',true)}</select></td>
+    <td style="width:68px"><select data-field="granulometria" style="width:100%">${mkSel('granulometria',true)}</select></td>
+    <td style="width:58px"><select data-field="fosiles" style="width:100%">${mkSel('fosiles',true)}</select></td>
+    <td style="width:60px"><select data-field="dens" style="width:100%" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
+    <td style="width:60px"><select data-field="muestrea" style="width:100%" onchange="renderYN(this);highlightGeoMuest(this)"><option>N</option><option>Y</option></select></td>
     <td><input data-field="descripcion" style="width:100%"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'geo')">✕</button></td>`;
   tbody.appendChild(tr);
@@ -1149,7 +1195,7 @@ function showFillDownMenu(e){
   const existing=document.getElementById('filldown-menu');
   if(existing){existing.remove();return;}
   const fields=[
-    ['lito1','Lito 1'],['lito_mod','Lito Mod'],['ore_zone','Ore Zone'],['oz_mod','OZ Mod'],
+    ['lito1','Lito 1'],['ore_zone','Ore Zone'],
     ['color','Color'],['intensidad','Intens.'],['contacto','Contacto'],
     ['granulometria','Gran.'],['fosiles','Fós.'],['dens','Dens?'],['muestrea','Muest?']
   ];
@@ -1167,6 +1213,15 @@ function showFillDownMenu(e){
 function renderYN(sel){
   sel.style.color=sel.value==='Y'?'var(--green)':'var(--text3)';
   sel.style.fontWeight=sel.value==='Y'?'700':'400';
+}
+// Highlight entire row green when Muestrea = Y
+function highlightGeoMuest(el){
+  if(!el)return;
+  const tr=el.closest('tr');if(!tr)return;
+  // Check muestrea field (may be called from ore_zone change too)
+  const muestEl=tr.querySelector('[data-field=muestrea]');
+  const val=muestEl?muestEl.value:'N';
+  tr.classList.toggle('row-muest',val==='Y');
 }
 function onGeoOzChange(sel){
   const td=sel.closest('tr').querySelector('[data-field=simb_cell]');
@@ -1202,14 +1257,15 @@ function addGeoRowFromData(r){
   const tbody=document.getElementById('geo-tbody');
   const tr=tbody.lastElementChild;
   const s=(f,v)=>{const el=tr.querySelector(`[data-field=${f}]`);if(el&&v!=null)el.value=v;};
-  s('from',r.from);s('to',r.to);s('lito1',r.lito1);s('lito_mod',r.lito_mod);
-  s('ore_zone',r.ore_zone);s('oz_mod',r.oz_mod);s('color',r.color);
+  s('from',r.from);s('to',r.to);s('lito1',r.lito1);
+  s('ore_zone',r.ore_zone);s('color',r.color);
   s('intensidad',r.intensidad);s('contacto',r.contacto);s('granulometria',r.granulometria);
   s('fosiles',r.fosiles);
   const densEl=tr.querySelector('[data-field=dens]');if(densEl){densEl.value=r.dens||'N';renderYN(densEl);}
   const muestEl=tr.querySelector('[data-field=muestrea]');if(muestEl){muestEl.value=r.muestrea||'N';renderYN(muestEl);}
   s('descripcion',r.descripcion);
   const ozSel=tr.querySelector('[data-field=ore_zone]');if(ozSel)onGeoOzChange(ozSel);
+  highlightGeoMuest(tr.querySelector('[data-field=muestrea]'));
   calcGeoRow(tr.querySelector('[data-field=from]'));
 }
 function saveGeologia(){
@@ -1234,18 +1290,18 @@ function _addMuestTr(data){
   tr.dataset.ozVal=oz;
   tr.innerHTML=`
     <td class="num"></td>
-    <td style="text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
-    <td><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcMuestRow(this)" style="width:58px"></td>
-    <td><input data-field="to" type="number" step="0.01" oninput="calcMuestRow(this)" style="width:58px"></td>
-    <td class="calc"><span data-field="length">—</span></td>
-    <td><input data-field="n_muestra" style="width:138px" placeholder="${currentHoleId||'BAY-26-DH-XXXX'}-###"></td>
-    <td><select data-field="tipo_muestra" style="width:62px">${tipos}</select></td>
-    <td><select data-field="tipo_control" style="width:62px">${ctrls}</select></td>
-    <td><input data-field="n_padre" style="width:148px"></td>
-    <td><select data-field="ctrl_gran" style="width:46px"><option>N</option><option>Y</option></select></td>
-    <td><input data-field="fecha" type="date" style="width:116px"></td>
-    <td><input data-field="peso" type="number" step="0.1" style="width:52px"></td>
-    <td><input data-field="comentarios" style="width:100px"></td>
+    <td style="width:30px;text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
+    <td style="width:72px"><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcMuestRow(this)" style="width:100%"></td>
+    <td style="width:72px"><input data-field="to" type="number" step="0.01" oninput="calcMuestRow(this)" style="width:100%"></td>
+    <td class="calc" style="width:52px"><span data-field="length">—</span></td>
+    <td style="width:172px"><input data-field="n_muestra" style="width:100%" placeholder="${currentHoleId||'BAY-26-DH-XXXX'}-###"></td>
+    <td style="width:90px"><select data-field="tipo_muestra" style="width:100%">${tipos}</select></td>
+    <td style="width:90px"><select data-field="tipo_control" style="width:100%">${ctrls}</select></td>
+    <td style="width:172px"><input data-field="n_padre" style="width:100%"></td>
+    <td style="width:56px"><select data-field="ctrl_gran" style="width:100%"><option>N</option><option>Y</option></select></td>
+    <td style="width:130px"><input data-field="fecha" type="date" style="width:100%"></td>
+    <td style="width:65px"><input data-field="peso" type="number" step="0.1" style="width:100%"></td>
+    <td><input data-field="comentarios" style="width:100%;min-width:100px"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'muest')">✕</button></td>`;
   tbody.appendChild(tr);
   if(data){
@@ -1333,17 +1389,17 @@ function insertDup(){
   newTr.innerHTML=`
     <td class="num"></td>
     <td style="text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
-    <td><input data-field="from" type="number" step="0.01" value="${from}" oninput="calcMuestRow(this)" style="width:58px"></td>
-    <td><input data-field="to" type="number" step="0.01" value="${to}" oninput="calcMuestRow(this)" style="width:58px"></td>
-    <td class="calc"><span data-field="length">—</span></td>
-    <td><input data-field="n_muestra" style="width:138px"></td>
-    <td><select data-field="tipo_muestra" style="width:62px">${tipos}</select></td>
-    <td><select data-field="tipo_control" style="width:62px">${ctrls}</select></td>
-    <td><input data-field="n_padre" style="width:148px"></td>
-    <td><select data-field="ctrl_gran" style="width:46px"><option>N</option><option>Y</option></select></td>
-    <td><input data-field="fecha" type="date" style="width:116px"></td>
-    <td><input data-field="peso" type="number" step="0.1" style="width:52px"></td>
-    <td><input data-field="comentarios" style="width:100px"></td>
+    <td style="width:72px"><input data-field="from" type="number" step="0.01" value="${from}" oninput="calcMuestRow(this)" style="width:100%"></td>
+    <td style="width:72px"><input data-field="to" type="number" step="0.01" value="${to}" oninput="calcMuestRow(this)" style="width:100%"></td>
+    <td class="calc" style="width:52px"><span data-field="length">—</span></td>
+    <td style="width:172px"><input data-field="n_muestra" style="width:100%"></td>
+    <td style="width:90px"><select data-field="tipo_muestra" style="width:100%">${tipos}</select></td>
+    <td style="width:90px"><select data-field="tipo_control" style="width:100%">${ctrls}</select></td>
+    <td style="width:172px"><input data-field="n_padre" style="width:100%"></td>
+    <td style="width:56px"><select data-field="ctrl_gran" style="width:100%"><option>N</option><option>Y</option></select></td>
+    <td style="width:130px"><input data-field="fecha" type="date" style="width:100%"></td>
+    <td style="width:65px"><input data-field="peso" type="number" step="0.1" style="width:100%"></td>
+    <td><input data-field="comentarios" style="width:100%;min-width:100px"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'muest')">✕</button></td>`;
   newTr.querySelector('[data-field=tipo_muestra]').value=tipo;
   newTr.querySelector('[data-field=tipo_control]').value='—';
@@ -1377,15 +1433,15 @@ function insertCtrl(){
     <td style="text-align:center"><div class="oz-chip" data-field="oz_val" style="background:#94a3b8;display:inline-block" title="—"></div></td>
     <td><input data-field="from" type="number" step="0.01" style="width:58px"></td>
     <td><input data-field="to" type="number" step="0.01" style="width:58px"></td>
-    <td class="calc"><span data-field="length">—</span></td>
-    <td><input data-field="n_muestra" style="width:138px" placeholder="${currentHoleId||'BAY-26-DH-XXXX'}-###"></td>
-    <td><select data-field="tipo_muestra" style="width:62px">${tipos}</select></td>
-    <td><select data-field="tipo_control" style="width:62px">${ctrls}</select></td>
-    <td><input data-field="n_padre" style="width:148px"></td>
-    <td><select data-field="ctrl_gran" style="width:46px"><option>N</option><option>Y</option></select></td>
-    <td><input data-field="fecha" type="date" style="width:116px"></td>
-    <td><input data-field="peso" type="number" step="0.1" style="width:52px"></td>
-    <td><input data-field="comentarios" style="width:100px"></td>
+    <td class="calc" style="width:52px"><span data-field="length">—</span></td>
+    <td style="width:172px"><input data-field="n_muestra" style="width:100%" placeholder="${currentHoleId||'BAY-26-DH-XXXX'}-###"></td>
+    <td style="width:90px"><select data-field="tipo_muestra" style="width:100%">${tipos}</select></td>
+    <td style="width:90px"><select data-field="tipo_control" style="width:100%">${ctrls}</select></td>
+    <td style="width:172px"><input data-field="n_padre" style="width:100%"></td>
+    <td style="width:56px"><select data-field="ctrl_gran" style="width:100%"><option>N</option><option>Y</option></select></td>
+    <td style="width:130px"><input data-field="fecha" type="date" style="width:100%"></td>
+    <td style="width:65px"><input data-field="peso" type="number" step="0.1" style="width:100%"></td>
+    <td><input data-field="comentarios" style="width:100%;min-width:100px"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'muest')">✕</button></td>`;
   newTr.querySelector('[data-field=tipo_muestra]').value='Control';
   // Set tipo_control to the selected value (CBK, BAY01-19, etc.)
@@ -1757,16 +1813,16 @@ function confirmAutoQaqc(){
     newTr.innerHTML=`
       <td class="num"></td>
       <td style="text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
-      <td><input data-field="from" type="number" step="0.01" value="${p.from||''}" oninput="calcMuestRow(this)" style="width:58px"></td>
-      <td><input data-field="to" type="number" step="0.01" value="${p.to||''}" oninput="calcMuestRow(this)" style="width:58px"></td>
-      <td class="calc"><span data-field="length">—</span></td>
+      <td><input data-field="from" type="number" step="0.01" value="${p.from||''}" oninput="calcMuestRow(this)" style="width:100%"></td>
+      <td><input data-field="to" type="number" step="0.01" value="${p.to||''}" oninput="calcMuestRow(this)" style="width:100%"></td>
+      <td class="calc" style="width:52px"><span data-field="length">—</span></td>
       <td><input data-field="n_muestra" style="width:138px" placeholder="${currentHoleId||'BAY-XX-DH-XXXX'}-###"></td>
-      <td><select data-field="tipo_muestra" style="width:62px">${tipos}</select></td>
-      <td><select data-field="tipo_control" style="width:62px">${ctrls}</select></td>
-      <td><input data-field="n_padre" style="width:148px"></td>
-      <td><select data-field="ctrl_gran" style="width:46px"><option>N</option><option>Y</option></select></td>
-      <td><input data-field="fecha" type="date" style="width:116px"></td>
-      <td><input data-field="peso" type="number" step="0.1" style="width:52px"></td>
+      <td style="width:90px"><select data-field="tipo_muestra" style="width:100%">${tipos}</select></td>
+      <td style="width:90px"><select data-field="tipo_control" style="width:100%">${ctrls}</select></td>
+      <td style="width:172px"><input data-field="n_padre" style="width:100%"></td>
+      <td style="width:56px"><select data-field="ctrl_gran" style="width:100%"><option>N</option><option>Y</option></select></td>
+      <td style="width:130px"><input data-field="fecha" type="date" style="width:100%"></td>
+      <td style="width:65px"><input data-field="peso" type="number" step="0.1" style="width:100%"></td>
       <td><input data-field="comentarios" value="${p.note}" style="width:100px"></td>
       <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'muest')">✕</button></td>`;
     newTr.querySelector('[data-field=tipo_muestra]').value=p.tipo_muestra;
@@ -1863,24 +1919,24 @@ function addDensRow(data){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td class="num"></td>
-    <td><input data-field="from" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="to" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="desde_dens" type="number" step="0.01" style="width:50px"></td>
-    <td><input data-field="hasta_dens" type="number" step="0.01" style="width:50px"></td>
-    <td><input data-field="n_muestra" style="width:138px" placeholder="BAY-26-ED-###"></td>
-    <td><select data-field="tipo" style="width:58px">${tipos}</select></td>
-    <td><input data-field="fecha" type="date" style="width:112px"></td>
-    <td><input data-field="p_hum" type="number" step="0.1" style="width:66px" oninput="calcDens(this)"></td>
-    <td><input data-field="p_seco" type="number" step="0.1" style="width:66px" oninput="calcDens(this)"></td>
-    <td><input data-field="l1" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="l2" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="l3" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="l4" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="d1" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="d2" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="d3" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td><input data-field="d4" type="number" step="0.01" style="width:46px" oninput="calcDens(this)"></td>
-    <td data-field="estado_cell"><span style="color:var(--text3)">—</span></td>
+    <td style="width:72px"><input data-field="from" type="number" step="0.01" style="width:100%" oninput="calcDens(this);validateDesdeHasta(this)"></td>
+    <td style="width:72px"><input data-field="to" type="number" step="0.01" style="width:100%" oninput="calcDens(this);validateDesdeHasta(this)"></td>
+    <td style="width:78px"><input data-field="desde_dens" type="number" step="0.01" style="width:100%" oninput="validateDesdeHasta(this)"></td>
+    <td style="width:78px"><input data-field="hasta_dens" type="number" step="0.01" style="width:100%" oninput="validateDesdeHasta(this)"></td>
+    <td style="width:172px"><input data-field="n_muestra" style="width:100%" placeholder="BAY-26-ED-###"></td>
+    <td style="width:78px"><select data-field="tipo" style="width:100%">${tipos}</select></td>
+    <td style="width:130px"><input data-field="fecha" type="date" style="width:100%"></td>
+    <td style="width:94px"><input data-field="p_hum" type="number" step="0.1" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:94px"><input data-field="p_seco" type="number" step="0.1" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:62px"><input data-field="l1" type="number" step="0.01" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:62px"><input data-field="l2" type="number" step="0.01" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:62px"><input data-field="l3" type="number" step="0.01" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:62px"><input data-field="l4" type="number" step="0.01" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:62px"><input data-field="d1" type="number" step="0.01" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:62px"><input data-field="d2" type="number" step="0.01" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:62px"><input data-field="d3" type="number" step="0.01" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:62px"><input data-field="d4" type="number" step="0.01" style="width:100%" oninput="calcDens(this)"></td>
+    <td style="width:100px" data-field="estado_cell"><span style="color:var(--text3)">—</span></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'dens')">✕</button></td>`;
   tbody.appendChild(tr);
   if(data){
@@ -1889,6 +1945,7 @@ function addDensRow(data){
      'l1','l2','l3','l4','d1','d2','d3','d4'].forEach(f=>s(f,data[f]));
     const tEl=tr.querySelector('[data-field=tipo]');if(tEl&&data.tipo)tEl.value=data.tipo;
     calcDens(tr.querySelector('[data-field=p_hum]'));
+    validateDesdeHasta(tr.querySelector('[data-field=desde_dens]')||tr.querySelector('[data-field=from]'));
   }
   reindex('dens');
 }
@@ -1970,6 +2027,61 @@ function importFromGeologiaDens(){
   toast(`📥 ${added} intervalos DENS importados`);
 }
 // FIX: autoNumDens always starts at 001
+// FIX 3: Validate desde_dens and hasta_dens must be within from..to
+function validateDesdeHasta(el){
+  const tr=el.closest('tr');
+  const fromEl=tr.querySelector('[data-field=from]');
+  const toEl=tr.querySelector('[data-field=to]');
+  const desdeEl=tr.querySelector('[data-field=desde_dens]');
+  const hastaEl=tr.querySelector('[data-field=hasta_dens]');
+  const from=parseFloat(fromEl?.value)||0;
+  const to=parseFloat(toEl?.value)||0;
+  // Reset styles on all four fields
+  [desdeEl,hastaEl].forEach(e=>{
+    if(e){e.style.background='';e.style.color='';e.title='';}
+  });
+  if(!from&&!to)return;
+  // ── Validate & clamp Desde Dens ──
+  if(desdeEl&&desdeEl.value!==''){
+    let val=parseFloat(desdeEl.value);
+    if(isNaN(val))return;
+    if(val<from){
+      // Clamp to From
+      desdeEl.value=from.toFixed(2);
+      desdeEl.style.background='#fef3c7';
+      desdeEl.style.color='var(--orange)';
+      desdeEl.title=`Ajustado al mínimo From (${from})`;
+    } else if(val>to){
+      // Clamp to To
+      desdeEl.value=to.toFixed(2);
+      desdeEl.style.background='#fef3c7';
+      desdeEl.style.color='var(--orange)';
+      desdeEl.title=`Ajustado al máximo To (${to})`;
+    }
+  }
+  // ── Validate & clamp Hasta Dens ──
+  if(hastaEl&&hastaEl.value!==''){
+    const desde=parseFloat(desdeEl?.value)||from;
+    let val=parseFloat(hastaEl.value);
+    if(isNaN(val))return;
+    if(val<from){
+      hastaEl.value=from.toFixed(2);
+      hastaEl.style.background='#fef3c7';
+      hastaEl.style.color='var(--orange)';
+      hastaEl.title=`Ajustado al mínimo From (${from})`;
+    } else if(val>to){
+      hastaEl.value=to.toFixed(2);
+      hastaEl.style.background='#fef3c7';
+      hastaEl.style.color='var(--orange)';
+      hastaEl.title=`Ajustado al máximo To (${to})`;
+    } else if(val<desde){
+      // Hasta < Desde — warn but don't clamp (user may still be typing)
+      hastaEl.style.background='#fee2e2';
+      hastaEl.style.color='var(--red)';
+      hastaEl.title=`Hasta Dens (${val}) < Desde Dens (${desde})`;
+    }
+  }
+}
 function autoNumDens(){
   if(!currentHoleId){toast('Cargue un sondaje','warn');return;}
   const base=currentHoleId.replace('-DH-','-ED-');
@@ -2036,12 +2148,18 @@ function reindex(prefix){
 function renderLog(){
   const log=getLog();
   document.getElementById('log-tbody').innerHTML=log.map(e=>`
-    <tr><td style="white-space:nowrap;font-family:var(--mono);font-size:.75rem">${e.ts.replace('T',' ').slice(0,19)}</td>
-    <td>${e.user}</td><td style="font-family:var(--mono)">${e.hole}</td><td>${e.action}</td></tr>`).join('');
+    <tr>
+      <td style="white-space:nowrap;font-family:var(--mono);font-size:.75rem">${e.ts.replace('T',' ').slice(0,19)}</td>
+      <td>${e.user}</td>
+      <td style="font-family:var(--mono)">${e.hole}</td>
+      <td>${e.action}</td>
+      <td style="font-size:.75rem;color:var(--text3)">${e.device||'—'}</td>
+    </tr>`).join('');
 }
 function exportLog(){
   const log=getLog();
-  const csv='Fecha/Hora,Usuario,Sondaje,Acción\n'+log.map(e=>`"${e.ts}","${e.user}","${e.hole}","${e.action}"`).join('\n');
+  const csv='Fecha/Hora,Usuario,Sondaje,Acción,Equipo\n'+
+    log.map(e=>`"${e.ts}","${e.user}","${e.hole}","${e.action}","${e.device||''}"`).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='core-logging-log.csv';a.click();
@@ -2510,6 +2628,163 @@ async function gsSyncList(key, values) {
   } else {
     console.warn('[GS] Error al sincronizar lista:', key, r?.msg);
   }
+}
+
+// ═══════════════════════════════════════════════════
+// RECUPERAR SONDAJE DESDE GOOGLE SHEETS
+// ═══════════════════════════════════════════════════
+async function recoverFromSheetsModal(){
+  if(!GS_URL){
+    toast('Google Sheets no está configurado (GS_URL vacía)','warn');
+    return;
+  }
+  document.getElementById('recover-status').innerHTML='<span style="color:var(--text3)">↺ Consultando Sheets…</span>';
+  document.getElementById('recover-info').style.display='none';
+  document.getElementById('modal-recover').style.display='flex';
+  await refreshSheetsHoleList();
+}
+
+async function refreshSheetsHoleList(){
+  const statusEl=document.getElementById('recover-status');
+  const sel=document.getElementById('recover-hole-sel');
+  statusEl.innerHTML='<span style="color:var(--text3)">↺ Obteniendo lista de sondajes…</span>';
+  sel.innerHTML='<option value="">— Cargando… —</option>';
+  const r=await gsPost({action:'getHoles'});
+  if(!r?.ok){
+    statusEl.innerHTML='<span style="color:var(--red)">✗ No se pudo conectar a Sheets. Verifica GS_URL y conexión.</span>';
+    sel.innerHTML='<option value="">— Sin conexión —</option>';
+    return;
+  }
+  const holesInSheets=r.holes||[];
+  const localHoles=Object.keys(getHoles());
+  // Mark which are already local
+  statusEl.innerHTML=`<span style="color:var(--green)">✓ ${holesInSheets.length} sondaje(s) encontrados en Sheets</span>`;
+  if(!holesInSheets.length){
+    sel.innerHTML='<option value="">— Sin sondajes en Sheets —</option>';
+    return;
+  }
+  sel.innerHTML=holesInSheets.map(id=>{
+    const isLocal=localHoles.includes(id);
+    return `<option value="${id}">${id}${isLocal?' (ya en local)':' ✦ nuevo'}</option>`;
+  }).join('');
+  sel.onchange=()=>previewRecoverHole(sel.value);
+  previewRecoverHole(sel.value);
+}
+
+async function previewRecoverHole(holeId){
+  const infoEl=document.getElementById('recover-info');
+  if(!holeId){infoEl.style.display='none';return;}
+  infoEl.style.display='';
+  infoEl.innerHTML='<span style="color:var(--text3)">↺ Consultando datos…</span>';
+  const r=await gsPost({action:'getHole',holeId});
+  if(!r?.ok){infoEl.innerHTML='<span style="color:var(--red)">Error al leer sondaje</span>';return;}
+  const h=r.hole?.header||{};
+  const marc=(r.hole?.marcacion||[]).length;
+  const geo=(r.hole?.geologia||[]).length;
+  const muest=(r.hole?.muestreo||[]).length;
+  const dens=(r.hole?.densidad||[]).length;
+  const isLocal=Object.keys(getHoles()).includes(holeId);
+  infoEl.innerHTML=`
+    <b>${holeId}</b>${isLocal?'&nbsp;<span style="color:var(--orange);font-size:.75rem">⚠ Ya existe localmente — se sobreescribirá</span>':''}<br>
+    <span style="color:var(--text3)">
+      ${h.tipo||'—'} | ⌖ ${h.profundidad||0} m | ${h.geologo||'—'}<br>
+      Marcación: ${marc} filas &nbsp;·&nbsp; Geología: ${geo} filas &nbsp;·&nbsp; Muestreo: ${muest} muestras &nbsp;·&nbsp; Densidad: ${dens} filas
+    </span>`;
+}
+
+async function doRecoverFromSheets(){
+  const holeId=document.getElementById('recover-hole-sel').value;
+  if(!holeId){toast('Seleccione un sondaje','warn');return;}
+  const statusEl=document.getElementById('recover-status');
+  statusEl.innerHTML='<span style="color:var(--text3)">↺ Descargando datos de Sheets…</span>';
+  const r=await gsPost({action:'getHole',holeId});
+  if(!r?.ok||!r.hole){
+    statusEl.innerHTML='<span style="color:var(--red)">✗ Error al descargar sondaje</span>';
+    toast('Error al recuperar sondaje de Sheets','warn');
+    return;
+  }
+  // Save current hole before switching
+  autoSaveCurrent();
+  // Map Sheets data back to app format and save locally
+  const hole=r.hole;
+  // Normalize header field names (Sheets uses display names, need to map back)
+  const h=hole.header||{};
+  const normalizedHole={
+    header:{
+      id:h.id||holeId,
+      proyecto:h.proyecto||h['Proyecto']||'',
+      fase:h.fase||h['Fase']||'',
+      tipo:h.tipo||h['Tipo']||'',
+      diametro:h.diametro||h['Diametro']||'',
+      ubicacion:h.ubicacion||h['Ubicacion']||'',
+      plataforma:h.plataforma||h['Plataforma']||'',
+      azimuth:h.azimuth||h['Azimuth (deg)']||'',
+      dip:h.dip||h['Dip (deg)']||'',
+      profundidad:h.profundidad||h['Profundidad Final (m)']||0,
+      completed:h.completed||h['Is Completed']||'N',
+      geologo:h.geologo||h['Geologo']||'',
+      tecnico:h.tecnico||h['Tecnico']||'',
+      cliente:h.cliente||h['Cliente']||'',
+      compania:h.compania||h['Compania']||'',
+      perforadora:h.perforadora||h['Perforadora']||'',
+      fecha_inicio:h.fecha_inicio||h['Fecha Inicio']||'',
+      fecha_fin:h.fecha_fin||h['Fecha Fin']||'',
+      fecha_ingreso:h.fecha_ingreso||h['Fecha Ingreso']||'',
+      cajas:h.cajas||h['Cajas Core']||'',
+      tipo_coord:h.tipo_coord||h['Tipo Coord']||'',
+      datum:h.datum||h['Datum']||'',
+      norte:h.norte||h['Norte (m)']||'',
+      este:h.este||h['Este (m)']||'',
+      elevacion:h.elevacion||h['Elevacion (msnm)']||'',
+      metodo_topo:h.metodo_topo||h['Metodo Topografico']||'',
+      comentarios:h.comentarios||h['Comentarios']||'',
+    },
+    marcacion: (hole.marcacion||[]).map(r=>({
+      from:r['From (m)']||r.from||'', to:r['To (m)']||r.to||'',
+      rec_m:r['Rec m']||r.rec_m||'', rec_geo:r['Rec Geo m']||r.rec_geo||'',
+      comentarios:r['Comentarios']||r.comentarios||''
+    })),
+    geologia: (hole.geologia||[]).map(r=>({
+      from:r['From']||r.from||'', to:r['To']||r.to||'',
+      ore_zone:r['Ore Zone']||r.ore_zone||'', lito1:r['Lito 1']||r.lito1||'',
+      color:r['Color']||r.color||'', intensidad:r['Intensidad']||r.intensidad||'',
+      contacto:r['Contacto']||r.contacto||'', granulometria:r['Granulometria']||r.granulometria||'',
+      fosiles:r['Fosiles']||r.fosiles||'', dens:r['Dens']||r.dens||'N',
+      muestrea:r['Muestrea']||r.muestrea||'N', descripcion:r['Descripcion']||r.descripcion||''
+    })),
+    muestreo: (hole.muestreo||[]).map(r=>({
+      ore_zone:r['Ore Zone']||r.ore_zone||'',
+      from:r['From']||r.from||'', to:r['To']||r.to||'',
+      n_muestra:r['N Muestra']||r.n_muestra||'',
+      tipo_muestra:r['Tipo Muestra']||r.tipo_muestra||'',
+      tipo_control:r['Tipo Control']||r.tipo_control||'—',
+      n_padre:r['N Muestra Padre']||r.n_padre||'',
+      ctrl_gran:r['Ctrl Gran']||r.ctrl_gran||'N',
+      fecha:r['Fecha Muestreo']||r.fecha||'',
+      peso:r['Peso (g)']||r.peso||'',
+      comentarios:r['Comentarios']||r.comentarios||''
+    })),
+    densidad: (hole.densidad||[]).map(r=>({
+      from:r['From']||r.from||'', to:r['To']||r.to||'',
+      desde_dens:r['Desde Dens']||r.desde_dens||'',
+      hasta_dens:r['Hasta Dens']||r.hasta_dens||'',
+      n_muestra:r['N Muestra']||r.n_muestra||'',
+      tipo:r['Tipo']||r.tipo||'DENS',
+      fecha:r['Fecha']||r.fecha||'',
+      p_hum:r['P Hum (g)']||r.p_hum||'', p_seco:r['P Seco (g)']||r.p_seco||'',
+      l1:r['L1']||r.l1||'', l2:r['L2']||r.l2||'',
+      l3:r['L3']||r.l3||'', l4:r['L4']||r.l4||'',
+      d1:r['D1']||r.d1||'', d2:r['D2']||r.d2||'',
+      d3:r['D3']||r.d3||'', d4:r['D4']||r.d4||''
+    }))
+  };
+  saveHole(holeId, normalizedHole);
+  const dev=getDeviceDesc();
+  addLog(`Sondaje recuperado de Sheets: ${holeId}`, dev);
+  closeModal('modal-recover');
+  populateHoleSelector();
+  loadHole(holeId);
+  toast(`☁ Sondaje ${holeId} recuperado de Sheets`);
 }
 
 // INIT
