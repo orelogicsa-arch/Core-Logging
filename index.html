@@ -42,12 +42,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:2000;backdrop-filter:blur(3px)}
-#modal-login{top:52px}
+.modal-overlay[style*="display:none"]{pointer-events:none}
+#modal-login{top:52px;z-index:2000}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;min-width:340px;max-width:92vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
 .modal h2{font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--blue)}
 
-/* TOPBAR — fijo en la parte superior, nunca se desplaza */
-#topbar{position:fixed;top:0;left:0;right:0;background:var(--blue);color:#fff;padding:0 16px;height:52px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 2px 8px rgba(30,64,175,.3);z-index:1100}
+/* TOPBAR — siempre visible por encima de modales y overlays */
+/* TOPBAR — siempre visible por encima de modales y overlays */
+#topbar{position:fixed;top:0;left:0;right:0;background:var(--blue);color:#fff;padding:0 16px;height:52px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 2px 8px rgba(30,64,175,.3);z-index:2100}
 #topbar .logo{font-weight:700;font-size:1rem;letter-spacing:-.3px;white-space:nowrap}
 #topbar .logo span{opacity:.7;font-weight:400}
 #hole-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);padding:3px 10px;font-family:var(--mono);font-size:.8rem;color:#fff}
@@ -315,15 +317,16 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   <div id="geo-val-banner" class="val-banner" style="display:none"></div>
   <div class="btn-group">
     <button class="btn btn-primary btn-sm" onclick="saveGeologia()">💾 Guardar Geología</button>
+    <button class="btn btn-secondary btn-sm" onclick="showFillDownMenu(event)">↓ Rellenar abajo</button>
   </div>
   <div class="tbl-wrap">
     <table>
       <thead><tr>
         <th style="width:32px">#</th>
-        <th>From</th><th>To</th><th>Len</th><th>Simb</th>
+        <th>From</th><th>To</th><th>Len</th><th>OZ</th>
         <th>Lito 1</th><th>Lito Mod</th>
         <th>Ore Zone</th><th>OZ Mod</th>
-        <th>Color</th><th>Int.</th><th>Ctc</th><th>Gran.</th>
+        <th>Color</th><th>Intens.</th><th>Contacto</th><th>Gran.</th>
         <th>Fós.</th><th>Dens?</th><th>Muest?</th>
         <th>Descripción</th><th style="width:40px"></th>
       </tr></thead>
@@ -337,8 +340,13 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
 
 <!-- ══════════ MUESTREO ══════════ -->
 <div class="tab-panel" id="tab-muestreo">
+  <div id="qaqc-panel" style="display:none;background:var(--blue-xlight);border:1px solid var(--blue3);border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:.82rem">
+    <b style="color:var(--blue)">📊 Recomendaciones QAQC</b>
+    <div id="qaqc-content" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px"></div>
+  </div>
   <div class="btn-group">
     <button class="btn btn-secondary btn-sm" onclick="importFromGeologiaMuest()">📥 Importar de Geología</button>
+    <button class="btn btn-info btn-sm" onclick="autoInsertQaqc()">🔬 Insertar QAQC automático</button>
     <button class="btn btn-purple btn-sm" onclick="insertDupModal()">🔀 Insertar Duplicado</button>
     <button class="btn btn-success btn-sm" onclick="insertControlModal()">⚗️ Insertar Control/Estándar</button>
     <button class="btn btn-secondary btn-sm" onclick="autoNumMuest()">⚡ Auto-numerar</button>
@@ -435,19 +443,37 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   <div class="instr-section">
     <h3>Flujo de Trabajo</h3>
     <ul>
-      <li><b>1. Login</b> — Seleccionar usuario e ingresar contraseña.</li>
-      <li><b>2. Crear / seleccionar sondaje</b> — Barra de sondaje activo.</li>
-      <li><b>3. Header</b> — Completar metadatos. Ingresar la <b>Profundidad Final</b> antes de registrar intervalos.</li>
-      <li><b>4. Marcación</b> — Recuperación física por cajas. From se llena automáticamente desde el To anterior. ⚡ Relleno automático para sondajes estándar.</li>
-      <li><b>5. Geología</b> — Descripción litológica con Ore Zone, color, contacto, granulometría, fósiles y flags Dens/Muestrea.</li>
-      <li><b>6. Muestreo</b> — Importar desde Geología, insertar duplicados y controles, auto-numerar y generar plan de muestreo.</li>
-      <li><b>7. Densidad</b> — Importar intervalos DENS=Y, completar medidas. Validación automática de cada fila.</li>
-      <li><b>8. Exportar</b> — Genera XLSX con las secciones seleccionadas, una hoja por sección.</li>
+      <li><b>1. Login</b> — Seleccionar usuario e ingresar contraseña. Al iniciar se sincroniza automáticamente con Google Sheets (si está configurado).</li>
+      <li><b>2. Crear / seleccionar sondaje</b> — Código libre (ej: BAY-26-DH-0061). El sistema sugiere el siguiente número disponible.</li>
+      <li><b>3. Header</b> — Completar metadatos. La <b>Profundidad Final</b> es obligatoria antes de registrar intervalos. Al guardar se sincroniza con Google Sheets.</li>
+      <li><b>4. Marcación</b> — Recuperación física por cajas. From se rellena automáticamente desde el To anterior. ⚡ Relleno automático genera segmentos de 0.8 m + 1.5 m al 100%. Se bloquea al llegar a la profundidad final.</li>
+      <li><b>5. Geología</b> — Descripción litológica intervalo a intervalo. Los campos descriptivos (Lito, Ore Zone, Color, etc.) aparecen vacíos en cada fila nueva. Usar <b>↓ Rellenar abajo</b> para propagar el valor de una celda a todas las vacías debajo. El campo To se resalta en rojo si supera la profundidad final. Se bloquea al llegar a la profundidad.</li>
+      <li><b>6. Muestreo</b> — Importar intervalos Muestrea=Y desde Geología, insertar duplicados y controles QAQC, auto-numerar (siempre desde 001), rellenar fechas. El panel QAQC muestra en tiempo real cuántos controles se requieren según los criterios estándar. Al guardar se muestra el total de muestras por tipo.</li>
+      <li><b>7. Densidad</b> — Importar intervalos Dens=Y, completar medidas físicas. Desde/Hasta Dens se ingresan manualmente. Validación automática por celda (rojo=error, naranja=aviso). Al guardar muestra el conteo por tipo.</li>
+      <li><b>8. Exportar</b> — Genera XLSX con una hoja por sección. Multi-sondaje: todos apilados con columna ID Sondaje. Fechas en formato DD/MM/YYYY.</li>
+      <li><b>9. Admin</b> — Gestión de sondajes, listas configurables y usuarios. <b>↺ Actualizar desde Sheets</b> fuerza la descarga de la lista seleccionada desde Google Sheets.</li>
+      <li><b>10. Log</b> — Trazabilidad completa de todas las acciones. Exportable en CSV.</li>
     </ul>
   </div>
   <div class="instr-section">
     <h3>Simbología de Ore Zones</h3>
     <div class="oz-legend" id="oz-legend-instr"></div>
+  </div>
+  <div class="instr-section">
+    <h3>Protocolo QAQC Muestreo — Criterios de inserción</h3>
+    <ul>
+      <li><b>PRI</b> — Muestra principal del intervalo</li>
+      <li><b>TWS</b> (2.5%) — Twin: segunda mitad del core del mismo intervalo</li>
+      <li><b>CDP</b> (2.5%) — Duplicado de preparación</li>
+      <li><b>PDS</b> (5%) — Duplicado de pulpa para análisis</li>
+      <li><b>SEC</b> (5%) — Duplicado de sector</li>
+      <li><b>CBK</b> (5%) — Blanco de campo (sin intervalo de profundidad)</li>
+      <li><b>BAY01-19</b> (5%) — CRM de ley baja</li>
+      <li><b>BAY02-19</b> (5%) — CRM de ley media</li>
+      <li><b>BAY03-19</b> (5%) — CRM de ley alta</li>
+      <li><b>Ctrl Granulometría</b> (5%) — Preferiblemente en muestras con Length &gt; 0.7 m</li>
+    </ul>
+    <p style="margin-top:8px">El panel QAQC en la pestaña Muestreo calcula automáticamente cuántos de cada tipo se requieren en función de las muestras PRI registradas, y muestra en verde (cumplido) o rojo (pendiente) el estado de cada criterio.</p>
   </div>
   <div class="instr-section">
     <h3>Reglas de Validación — Densidad</h3>
@@ -456,23 +482,22 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
       <li><b style="color:var(--orange)">⚠ Aviso</b> — Diferencia entre pesos &gt; 20%</li>
       <li><b style="color:var(--orange)">⚠ Aviso</b> — CV de L1–L4 o D1–D4 entre 5% y 10%</li>
       <li><b style="color:var(--red)">✗ Error</b> — CV &gt; 10%</li>
+      <li>Las celdas problemáticas se colorean individualmente (rojo = error, naranja = aviso). La fila entera toma un fondo suave del mismo color.</li>
     </ul>
   </div>
   <div class="instr-section">
-    <h3>Protocolo QAQC Muestreo</h3>
+    <h3>Google Sheets — Sincronización</h3>
     <ul>
-      <li><b>PRI</b> — Muestra principal del intervalo</li>
-      <li><b>TWS</b> — Segunda mitad del core (twin)</li>
-      <li><b>DUP</b> — Duplicado de campo por cuarteo</li>
-      <li><b>CDP</b> — Duplicado de preparación</li>
-      <li><b>PDS</b> — Duplicado de pulpa</li>
-      <li><b>CBK</b> — Blanco de campo (sin intervalo)</li>
-      <li><b>CRM</b> — Material de referencia certificado (BAY01-19, BAY02-19, BAY03-19)</li>
+      <li>Indicador en la barra inferior: <b style="color:var(--green)">⬤ Sheets OK</b> / <b style="color:var(--orange)">↺ Sincronizando</b> / <b style="color:var(--red)">⬤ Sin Sheets</b> / ⬤ Solo Local</li>
+      <li>Al hacer login se descargan automáticamente las listas desde Sheets (si hay conexión).</li>
+      <li>Cada guardado manual o automático sincroniza el sondaje con Sheets.</li>
+      <li><b>↺ Actualizar desde Sheets</b> en Admin fuerza la descarga de la lista seleccionada sin necesidad de reiniciar sesión.</li>
+      <li>Sin conexión, todo funciona normalmente en modo local (localStorage).</li>
     </ul>
   </div>
   <div class="instr-section">
-    <h3>Persistencia Local</h3>
-    <p>Todos los datos se guardan en <b>localStorage</b> del navegador. No se requiere servidor. Cambiar de sondaje dispara guardado automático. Use <b>Exportar</b> para generar respaldos XLSX.</p>
+    <h3>Persistencia y Exportación</h3>
+    <p>Almacenamiento primario: <b>localStorage</b> del navegador (sin servidor). Almacenamiento secundario: <b>Google Sheets</b> (requiere configuración de GS_URL). Exportar genera un archivo <b>.xlsx</b> directamente en el navegador con SheetJS — sin subir datos a ningún servidor externo.</p>
   </div>
 </div>
 
@@ -578,9 +603,9 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
       <label>Tipo de control</label>
       <select id="ctrl-tipo" style="width:100%">
         <option value="CBK">CBK — Blanco de campo</option>
-        <option value="BAY01-19">BAY01-19 — CRM estándar 1</option>
-        <option value="BAY02-19">BAY02-19 — CRM estándar 2</option>
-        <option value="BAY03-19">BAY03-19 — CRM estándar 3</option>
+        <option value="BAY01-19">BAY01-19 — CRM de ley baja</option>
+        <option value="BAY02-19">BAY02-19 — CRM de ley media</option>
+        <option value="BAY03-19">BAY03-19 — CRM de ley alta</option>
       </select>
     </div>
     <div class="form-group" style="margin-bottom:12px">
@@ -619,6 +644,19 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
 </div>
 
+<!-- QAQC AUTO MODAL -->
+<div class="modal-overlay" id="modal-qaqc" style="display:none">
+  <div class="modal" style="min-width:480px;max-width:600px">
+    <h2>🔬 Insertar QAQC automático</h2>
+    <p style="font-size:.82rem;color:var(--text3);margin-bottom:14px">Controles calculados según protocolo QAQC Miski Mayo. Los controles ya existentes no se duplicarán.</p>
+    <div id="qaqc-preview" style="background:var(--surface3);border-radius:6px;padding:12px;margin-bottom:14px;font-size:.82rem;max-height:340px;overflow-y:auto"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btn-qaqc-confirm" onclick="confirmAutoQaqc()">✓ Insertar controles</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-qaqc')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- USER MANAGER -->
 <div class="modal-overlay" id="modal-users" style="display:none">
   <div class="modal" style="min-width:420px">
@@ -646,12 +684,38 @@ let currentUser = null;
 let currentHoleId = null;
 
 const OZ_COLORS = {
-  SAR:'#6ee7b7', SDI_0:'#93c5fd', SDI_1:'#60a5fa', SDI_2:'#2563eb',
-  CA0:'#e9d5ff', CA1:'#c084fc', CA2:'#a855f7', CA3:'#9333ea', CA4:'#7c3aed', CA5:'#6d28d9',
-  I12:'#fdba74', I23:'#fb923c', 'I-series':'#f97316',
-  CLA:'#d1d5db', UF12:'#fde047',
+  // CA series
+  CA0:'#8B6914', CA1:'#FF0000', CA2:'#A36500', CA3:'#1E90FF',
+  CA4:'#D30000', CA5:'#800080', CA6:'#0000FF', CA7:'#711D1D',
+  // CLA
+  CLA:'#9C9C9C',
+  // I series
+  I12:'#004C00', I23:'#00B700', I23A:'#CDC673', I23B:'#4EAE7E',
+  I34:'#006800', I45:'#00F800', I56:'#004C00', I67:'#90EE90',
+  I78:'#FF4646',
+  // SAR
+  SAR:'#FFFF00',
+  // SDI series
+  SDI0:'#0E9698', SDI_0D:'#46A3FF',
+  SDI_1A:'#37C8C3', SDI_1C:'#FFDB6F', SDI_1D:'#B8FF5A',
+  SDI_1E:'#8B8B00', SDI_1F:'#4D4D4D', SDI_1G:'#D4D400',
+  SDI2:'#19FFF7', SDI_2B:'#FFC0CB',
+  // Legacy aliases kept for backward compat
+  SDI_0:'#0E9698', SDI_1:'#37C8C3', SDI_2:'#19FFF7',
+  // UF series
+  UF23_1:'#FF7733', UF23_2:'#FF9853', UFS0:'#FF0000', UFS2_2:'#800080',
+  // Legacy
+  UF12:'#FF9853',
+  'I-series':'#00B700',
 };
-function ozColor(oz){return OZ_COLORS[oz]||'#94a3b8';}
+function ozColor(oz){
+  if(!oz)return'#94a3b8';
+  if(OZ_COLORS[oz])return OZ_COLORS[oz];
+  // Fallback by prefix
+  const pfx=oz.match(/^([A-Za-z]+)/)?.[1]?.toUpperCase();
+  const pfxMap={CA:'#A36500',SDI:'#37C8C3',I:'#00B700',UF:'#FF9853',SAR:'#FFFF00',CLA:'#9C9C9C'};
+  return pfxMap[pfx]||'#94a3b8';
+}
 function ozChip(oz){return `<div class="oz-chip" style="background:${ozColor(oz)};min-width:22px" title="${oz||'—'}"></div>`;}
 
 const DEFAULT_LISTS = {
@@ -669,7 +733,7 @@ const DEFAULT_LISTS = {
   tipo_coord:['P','EJEC'],
   datum:['WGS84 UTM 17S','WGS84 UTM 18S','PSAD56 UTM 17S'],
   litologia:['ARN','ARE','ACL','DAR','DIF','DIS','FOS','TUF'],
-  ore_zone:['SAR','SDI_0','SDI_1','SDI_2','CA0','CA1','CA2','CA3','CA4','CA5','I12','I23','I-series','CLA','UF12'],
+  ore_zone:['SAR','SDI0','SDI_0D','SDI_1A','SDI_1C','SDI_1D','SDI_1E','SDI_1F','SDI_1G','SDI2','SDI_2B','CA0','CA1','CA2','CA3','CA4','CA5','CA6','CA7','I12','I23','I23A','I23B','I34','I45','I56','I67','I78','CLA','UF23_1','UF23_2','UFS0','UFS2_2'],
   color:['BEI','GRI','MAR','NAR','NEG','VER'],
   intensidad:['CLA','OSC'],
   contacto:['GR','BR'],
@@ -1011,34 +1075,94 @@ function addGeoRow(fromVal){
   let from=0;
   if(fromVal!==undefined)from=fromVal;
   else if(rows.length>0)from=parseFloat(rows[rows.length-1].querySelector('[data-field=to]')?.value)||0;
-  if(pf>0&&from>=pf&&fromVal===undefined){toast('Ya se alcanzó la profundidad final ('+pf+' m)','warn');return;}
-  // FIX: descriptive fields get a blank first option so new rows appear empty
+  // Block when depth reached
+  if(pf>0&&from>=pf&&fromVal===undefined){
+    toast('Profundidad final alcanzada ('+pf+' m) — no se puede agregar más filas','warn');
+    return;
+  }
   const mkSel=(listName,blank=false)=>{
-    const opts=(blank?'<option value=""></option>':'')+list(listName).map(v=>`<option>${v}</option>`).join('');
-    return opts;
+    return (blank?'<option value=""></option>':'')+list(listName).map(v=>`<option>${v}</option>`).join('');
   };
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td class="num"></td>
-    <td><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcGeoRow(this);validateGeologia()" style="width:58px"></td>
-    <td><input data-field="to" type="number" step="0.01" oninput="calcGeoRow(this);validateGeologia()" style="width:58px"></td>
+    <td><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcGeoRow(this);validateGeologia()" style="width:100%"></td>
+    <td><input data-field="to" type="number" step="0.01" oninput="calcGeoRow(this);validateGeologia();checkGeoToRange(this)" style="width:100%"></td>
     <td class="calc"><span data-field="length">—</span></td>
-    <td data-field="simb_cell" style="text-align:center;min-width:28px">${ozChip('')}</td>
-    <td><select data-field="lito1" style="width:56px">${mkSel('litologia',true)}</select></td>
-    <td><input data-field="lito_mod" style="width:52px"></td>
-    <td><select data-field="ore_zone" style="width:72px" onchange="onGeoOzChange(this)">${mkSel('ore_zone',true)}</select></td>
-    <td><select data-field="oz_mod" style="width:72px">${mkSel('ore_zone',true)}</select></td>
-    <td><select data-field="color" style="width:50px">${mkSel('color',true)}</select></td>
-    <td><select data-field="intensidad" style="width:48px">${mkSel('intensidad',true)}</select></td>
-    <td><select data-field="contacto" style="width:46px">${mkSel('contacto',true)}</select></td>
-    <td><select data-field="granulometria" style="width:52px">${mkSel('granulometria',true)}</select></td>
-    <td><select data-field="fosiles" style="width:48px">${mkSel('fosiles',true)}</select></td>
-    <td><select data-field="dens" style="width:46px" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
-    <td><select data-field="muestrea" style="width:46px" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
-    <td><input data-field="descripcion" style="width:150px"></td>
+    <td data-field="simb_cell" style="text-align:center;min-width:26px">${ozChip('')}</td>
+    <td><select data-field="lito1" style="width:100%">${mkSel('litologia',true)}</select></td>
+    <td><input data-field="lito_mod" style="width:100%"></td>
+    <td><select data-field="ore_zone" style="width:100%" onchange="onGeoOzChange(this)">${mkSel('ore_zone',true)}</select></td>
+    <td><select data-field="oz_mod" style="width:100%">${mkSel('ore_zone',true)}</select></td>
+    <td><select data-field="color" style="width:100%">${mkSel('color',true)}</select></td>
+    <td><select data-field="intensidad" style="width:100%">${mkSel('intensidad',true)}</select></td>
+    <td><select data-field="contacto" style="width:100%">${mkSel('contacto',true)}</select></td>
+    <td><select data-field="granulometria" style="width:100%">${mkSel('granulometria',true)}</select></td>
+    <td><select data-field="fosiles" style="width:100%">${mkSel('fosiles',true)}</select></td>
+    <td><select data-field="dens" style="width:100%" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
+    <td><select data-field="muestrea" style="width:100%" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
+    <td><input data-field="descripcion" style="width:100%"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'geo')">✕</button></td>`;
   tbody.appendChild(tr);
   reindex('geo');updateCounters();updateProgress();
+}
+// Validate To against profundidad final — highlight red if exceeded
+function checkGeoToRange(el){
+  const pf=getProfundidad();
+  const to=parseFloat(el.value)||0;
+  if(pf>0&&to>pf){
+    el.style.background='#fee2e2';
+    el.style.color='var(--red)';
+    el.title=`To (${to}) supera la profundidad final (${pf} m)`;
+  } else {
+    el.style.background='';
+    el.style.color='';
+    el.title='';
+  }
+}
+// Fill-down: copy value from last filled row to all empty rows below for a given field
+function fillDownGeo(field){
+  const rows=Array.from(document.getElementById('geo-tbody').querySelectorAll('tr'));
+  if(rows.length<2){toast('Necesita al menos 2 filas para rellenar abajo','warn');return;}
+  let lastVal='';
+  let filled=0;
+  rows.forEach(tr=>{
+    const el=tr.querySelector(`[data-field=${field}]`);
+    if(!el)return;
+    const val=el.value||el.textContent||'';
+    if(val&&val!=='—'){lastVal=val;}
+    else if(!val&&lastVal){
+      el.value=lastVal;
+      if(el.tagName==='SELECT'){
+        // trigger color update for oz and yn selects
+        if(field==='ore_zone')onGeoOzChange(el);
+        if(field==='dens'||field==='muestrea')renderYN(el);
+      }
+      filled++;
+    }
+  });
+  toast(filled>0?`↓ ${filled} celdas rellenadas en columna "${field}"`:`No hay celdas vacías debajo en columna "${field}"`);
+}
+// Show fill-down menu
+function showFillDownMenu(e){
+  e.stopPropagation();
+  const existing=document.getElementById('filldown-menu');
+  if(existing){existing.remove();return;}
+  const fields=[
+    ['lito1','Lito 1'],['lito_mod','Lito Mod'],['ore_zone','Ore Zone'],['oz_mod','OZ Mod'],
+    ['color','Color'],['intensidad','Intens.'],['contacto','Contacto'],
+    ['granulometria','Gran.'],['fosiles','Fós.'],['dens','Dens?'],['muestrea','Muest?']
+  ];
+  const menu=document.createElement('div');
+  menu.id='filldown-menu';
+  menu.style.cssText='position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:3000;padding:6px 0;min-width:180px';
+  const btn=e.target.getBoundingClientRect();
+  menu.style.top=(btn.bottom+4)+'px';
+  menu.style.left=btn.left+'px';
+  menu.innerHTML='<div style="font-size:.72rem;font-weight:700;color:var(--blue);padding:4px 12px 6px;text-transform:uppercase;letter-spacing:.5px">Rellenar abajo columna:</div>'+
+    fields.map(([f,label])=>`<div onclick="fillDownGeo('${f}');document.getElementById('filldown-menu').remove()" style="padding:6px 14px;cursor:pointer;font-size:.83rem;color:var(--text2)" onmouseover="this.style.background='var(--blue-xlight)'" onmouseout="this.style.background=''">${label}</div>`).join('');
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',()=>menu.remove(),{once:true}),10);
 }
 function renderYN(sel){
   sel.style.color=sel.value==='Y'?'var(--green)':'var(--text3)';
@@ -1352,9 +1476,382 @@ function printMuestreo(){
   const w=window.open('','_blank','width=1000,height=700');
   w.document.write(html);w.document.close();w.focus();w.print();
 }
+// ═══════════════════════════════════════════════════
+// QAQC INSERCIÓN AUTOMÁTICA — Protocolo Miski Mayo
+// ═══════════════════════════════════════════════════
+
+// Ore zones que determinan qué CRM o CBK va después
+const QAQC_CBK_OZ   = new Set(['CA1','CA3','CA5','CA0','UFS0']); // CBK después de estos
+const QAQC_BAY01_OZ = new Set(['DIS','DAR','DIF']);               // BAY01 ley baja
+const QAQC_BAY02_OZ = new Set(['CA4','CA2','CA5','UFS0','CA0','UF45','UF23_1','UF23_2','UFS2_2']); // BAY02 ley media
+const QAQC_BAY03_OZ = new Set(['CA1','CA3']);                     // BAY03 ley alta
+const QAQC_TWS_OZ   = new Set(['DIS']);                           // TWS de DIS >60cm
+
+// Ore zones con prefijo CA (para fallback CBK adicional)
+function isCaZone(oz){ return oz && oz.startsWith('CA'); }
+
+// Construye el plan QAQC y muestra preview; guarda en window._qaqcPlan
+function autoInsertQaqc(){
+  const rows=readMuestData();
+  const priRows=rows.filter(r=>r.tipo_muestra==='PRI');
+  const n=priRows.length;
+  if(n===0){toast('Importe primero las muestras PRI desde Geología','warn');return;}
+
+  // Cantidades requeridas (redondeando al entero mayor mínimo 1)
+  const req={
+    CBK:    Math.max(1,Math.round(n*0.05)),
+    BAY01:  Math.max(1,Math.round(n*0.05)),
+    BAY02:  Math.max(1,Math.round(n*0.05)),
+    BAY03:  Math.max(1,Math.round(n*0.05)),
+    PDS:    Math.max(1,Math.round(n*0.05)),
+    CDP:    Math.max(1,Math.round(n*0.025)),
+    TWS:    Math.max(1,Math.round(n*0.025)),
+    GRAN:   Math.max(1,Math.round(n*0.05)), // ctrl_gran=Y
+  };
+
+  // Contar controles ya existentes por tipo_control
+  const existing={CBK:0,'BAY01-19':0,'BAY02-19':0,'BAY03-19':0,PDS:0,CDP:0,TWS:0,GRAN:0};
+  rows.forEach(r=>{
+    if(r.tipo_muestra==='Control'){
+      const tc=r.tipo_control;
+      if(tc==='CBK')existing.CBK++;
+      else if(tc==='BAY01-19')existing['BAY01-19']++;
+      else if(tc==='BAY02-19')existing['BAY02-19']++;
+      else if(tc==='BAY03-19')existing['BAY03-19']++;
+    }
+    if(r.tipo_muestra==='PDS')existing.PDS++;
+    if(r.tipo_muestra==='CDP')existing.CDP++;
+    if(r.tipo_muestra==='TWS')existing.TWS++;
+    if(r.ctrl_gran==='Y')existing.GRAN++;
+  });
+
+  // Plan de inserción: lista de {afterIdx, tipo_muestra, tipo_control, note, from, to, oz, ctrl_gran}
+  // afterIdx = índice en rows[] después del cual insertar; -1 = al final
+  const plan=[];
+  const insertedAfter=new Set(); // para respetar min 3 PRI entre controles
+
+  // Helper: encuentra el índice de la n-ésima ocurrencia de PRI en rows (0-based)
+  // y verifica que no haya ya un control en esa posición
+  const getInsertPos=(afterPriIdx)=>{
+    // afterPriIdx: índice dentro de priRows[]
+    if(afterPriIdx<0||afterPriIdx>=priRows.length)return -1;
+    const target=priRows[afterPriIdx];
+    // Encontrar posición en rows[]
+    let pos=rows.findIndex(r=>r===target);
+    return pos;
+  };
+
+  // Separación mínima: entre controles debe haber al menos 3 PRI
+  // Rastrear qué posiciones (en priRows) ya tienen un control programado justo después
+  const usedAfterPri=new Set();
+
+  function pickPriPos(candidateSet, count, fallback=false){
+    // candidateSet: Set de ore_zone preferidos; count: cuántos necesitamos
+    // Devuelve array de índices en rows[] donde insertar
+    const positions=[];
+    let priIdx=0;
+    while(positions.length<count && priIdx<priRows.length){
+      const pr=priRows[priIdx];
+      const oz=pr.ore_zone||'';
+      const inCandidate=candidateSet.size===0||candidateSet.has(oz)||
+        (fallback && positions.length<count);
+      // Check min spacing: last used priIdx debe ser ≥3 atrás
+      const lastUsed=Array.from(usedAfterPri).filter(i=>i<priIdx);
+      const minGap=lastUsed.length===0||priIdx-(Math.max(...lastUsed))>=3;
+      if(inCandidate && minGap && !usedAfterPri.has(priIdx)){
+        positions.push({rowPos:getInsertPos(priIdx), priRow:pr, priIdx});
+        usedAfterPri.add(priIdx);
+      }
+      priIdx++;
+    }
+    return positions;
+  }
+
+  // ── CBK: después de CA1, CA3, CA5 (también CA0, UFS0 si faltan) ──
+  const cbkNeeded=Math.max(0,req.CBK-existing.CBK);
+  if(cbkNeeded>0){
+    // Primero buscar CA1, CA3, CA5
+    const prim=pickPriPos(new Set(['CA1','CA3','CA5']),cbkNeeded);
+    prim.forEach(p=>plan.push({
+      afterIdx:p.rowPos, tipo_muestra:'Control', tipo_control:'CBK',
+      from:'',to:'',oz:'', note:`CBK después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`
+    }));
+    // Si faltan, completar con CA0/UFS0
+    const restCbk=cbkNeeded-prim.length;
+    if(restCbk>0){
+      const sec=pickPriPos(new Set(['CA0','UFS0']),restCbk,true);
+      sec.forEach(p=>plan.push({
+        afterIdx:p.rowPos, tipo_muestra:'Control', tipo_control:'CBK',
+        from:'',to:'',oz:'', note:`CBK adicional después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`
+      }));
+    }
+  }
+
+  // ── BAY01-19: después de DIS, DAR, DIF ──
+  const bay01Needed=Math.max(0,req.BAY01-existing['BAY01-19']);
+  if(bay01Needed>0){
+    const pos=pickPriPos(QAQC_BAY01_OZ,bay01Needed,true);
+    pos.forEach(p=>plan.push({
+      afterIdx:p.rowPos, tipo_muestra:'Control', tipo_control:'BAY01-19',
+      from:'',to:'',oz:'', note:`BAY01-19 (ley baja) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`
+    }));
+  }
+
+  // ── BAY02-19: después de CA4, CA2, UF, CA5, UFS0, CA0 ──
+  const bay02Needed=Math.max(0,req.BAY02-existing['BAY02-19']);
+  if(bay02Needed>0){
+    const pos=pickPriPos(QAQC_BAY02_OZ,bay02Needed,true);
+    pos.forEach(p=>plan.push({
+      afterIdx:p.rowPos, tipo_muestra:'Control', tipo_control:'BAY02-19',
+      from:'',to:'',oz:'', note:`BAY02-19 (ley media) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`
+    }));
+  }
+
+  // ── BAY03-19: después de CA1, CA3 ──
+  const bay03Needed=Math.max(0,req.BAY03-existing['BAY03-19']);
+  if(bay03Needed>0){
+    const pos=pickPriPos(QAQC_BAY03_OZ,bay03Needed,true);
+    pos.forEach(p=>plan.push({
+      afterIdx:p.rowPos, tipo_muestra:'Control', tipo_control:'BAY03-19',
+      from:'',to:'',oz:'', note:`BAY03-19 (ley alta) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`
+    }));
+  }
+
+  // ── PDS: cualquier intervalo >40cm; si PDS+CDP juntos >60cm ──
+  const pdsNeeded=Math.max(0,req.PDS-existing.PDS);
+  const cdpNeeded=Math.max(0,req.CDP-existing.CDP);
+  if(pdsNeeded>0||cdpNeeded>0){
+    // Candidatos: PRI con length adecuada
+    let pdsInserted=0,cdpInserted=0;
+    priRows.forEach((pr,idx)=>{
+      if(pdsInserted>=pdsNeeded&&cdpInserted>=cdpNeeded)return;
+      const len=parseFloat(pr.length)||0;
+      const lastUsed2=Array.from(usedAfterPri).filter(i=>i<idx);
+      const minGap2=lastUsed2.length===0||idx-(Math.max(...lastUsed2))>=3;
+      if(!minGap2||usedAfterPri.has(idx))return;
+      const rowPos=getInsertPos(idx);
+      if(pdsInserted<pdsNeeded&&cdpInserted<cdpNeeded&&len>=0.6){
+        // PDS + CDP juntos (>60cm)
+        plan.push({afterIdx:rowPos,tipo_muestra:'PDS',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`PDS (dup. fino) de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
+        plan.push({afterIdx:rowPos,tipo_muestra:'CDP',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`CDP (dup. grueso) de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
+        usedAfterPri.add(idx);pdsInserted++;cdpInserted++;
+      } else if(pdsInserted<pdsNeeded&&len>=0.4){
+        plan.push({afterIdx:rowPos,tipo_muestra:'PDS',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`PDS (dup. fino) de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
+        usedAfterPri.add(idx);pdsInserted++;
+      } else if(cdpInserted<cdpNeeded&&len>=0.4){
+        plan.push({afterIdx:rowPos,tipo_muestra:'CDP',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`CDP (dup. grueso) de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
+        usedAfterPri.add(idx);cdpInserted++;
+      }
+    });
+  }
+
+  // ── TWS: DIS con potencia >60cm ──
+  const twsNeeded=Math.max(0,req.TWS-existing.TWS);
+  if(twsNeeded>0){
+    let twsInserted=0;
+    priRows.forEach((pr,idx)=>{
+      if(twsInserted>=twsNeeded)return;
+      const oz=pr.ore_zone||'';
+      const len=parseFloat(pr.length)||0;
+      const lastUsed3=Array.from(usedAfterPri).filter(i=>i<idx);
+      const minGap3=lastUsed3.length===0||idx-(Math.max(...lastUsed3))>=3;
+      if((oz==='DIS'||oz==='DAR'||oz==='DIF')&&len>=0.6&&minGap3&&!usedAfterPri.has(idx)){
+        const rowPos=getInsertPos(idx);
+        plan.push({afterIdx:rowPos,tipo_muestra:'TWS',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`TWS (gemelo) de ${oz} [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
+        usedAfterPri.add(idx);twsInserted++;
+      }
+    });
+    // Si no hubo suficientes DIS >60cm, completar con cualquiera
+    if(twsInserted<twsNeeded){
+      const pos=pickPriPos(new Set(),twsNeeded-twsInserted,true);
+      pos.forEach(p=>{
+        const len=parseFloat(p.priRow.length)||0;
+        if(len>=0.6)plan.push({afterIdx:p.rowPos,tipo_muestra:'TWS',tipo_control:'—',
+          from:p.priRow.from,to:p.priRow.to,oz:p.priRow.ore_zone,
+          note:`TWS (gemelo) de [${p.priRow.from}–${p.priRow.to}] len=${len.toFixed(2)}m (selección manual recomendada)`});
+      });
+    }
+  }
+
+  // ── Ctrl Granulometría: 5% de PRI, preferir length >0.7m ──
+  const granNeeded=Math.max(0,req.GRAN-existing.GRAN);
+  if(granNeeded>0){
+    // Marcar las PRI con len>0.7 que no tengan ctrl_gran=Y
+    const granCandidates=priRows
+      .filter(r=>r.ctrl_gran!=='Y')
+      .sort((a,b)=>(parseFloat(b.length)||0)-(parseFloat(a.length)||0))
+      .slice(0,granNeeded);
+    granCandidates.forEach(pr=>{
+      plan.push({
+        afterIdx:-2, // señal especial: marcar ctrl_gran en fila PRI existente
+        priFrom:pr.from,priTo:pr.to,
+        note:`Ctrl Gran Y en PRI [${pr.from}–${pr.to}] len=${parseFloat(pr.length||0).toFixed(2)}m`
+      });
+    });
+  }
+
+  window._qaqcPlan=plan;
+
+  // ── Mostrar preview ──
+  const preview=document.getElementById('qaqc-preview');
+  if(plan.length===0){
+    preview.innerHTML='<p style="color:var(--green);font-weight:600">✓ Todos los controles QAQC ya están cubiertos. No hay acciones a realizar.</p>';
+    document.getElementById('btn-qaqc-confirm').style.display='none';
+  } else {
+    document.getElementById('btn-qaqc-confirm').style.display='';
+    const ctrlItems=plan.filter(p=>p.afterIdx!==-2);
+    const granItems=plan.filter(p=>p.afterIdx===-2);
+    let html=`<div style="margin-bottom:8px;color:var(--text2)">
+      <b>Base PRI:</b> ${n} &nbsp;|&nbsp; <b>Controles a insertar:</b> ${ctrlItems.length} &nbsp;|&nbsp; <b>Ctrl Gran a marcar:</b> ${granItems.length}
+    </div>`;
+    html+='<table style="width:100%;font-size:.78rem;border-collapse:collapse">';
+    html+='<tr style="background:var(--blue);color:#fff"><th style="padding:3px 6px;text-align:left">Tipo</th><th style="padding:3px 6px;text-align:left">Control</th><th style="padding:3px 6px;text-align:left">Detalle</th></tr>';
+    plan.forEach((p,i)=>{
+      const tipo=p.afterIdx===-2?'Ctrl Gran':p.tipo_muestra;
+      const ctrl=p.tipo_control&&p.tipo_control!=='—'?p.tipo_control:tipo;
+      const bg=i%2===0?'':'background:#f8fafc';
+      html+=`<tr style="${bg}">
+        <td style="padding:3px 6px;font-weight:700;color:var(--blue)">${tipo}</td>
+        <td style="padding:3px 6px">${ctrl}</td>
+        <td style="padding:3px 6px;color:var(--text3)">${p.note}</td>
+      </tr>`;
+    });
+    html+='</table>';
+    // Resumen de cobertura
+    html+=`<div style="margin-top:10px;font-size:.78rem;color:var(--text3)">
+      <b>Requerido:</b> CBK ${req.CBK} | BAY01 ${req.BAY01} | BAY02 ${req.BAY02} | BAY03 ${req.BAY03} | PDS ${req.PDS} | CDP ${req.CDP} | TWS ${req.TWS} | Ctrl Gran ${req.GRAN}<br>
+      <b>Existente:</b> CBK ${existing.CBK} | BAY01 ${existing['BAY01-19']} | BAY02 ${existing['BAY02-19']} | BAY03 ${existing['BAY03-19']} | PDS ${existing.PDS} | CDP ${existing.CDP} | TWS ${existing.TWS} | Ctrl Gran ${existing.GRAN}
+    </div>`;
+    preview.innerHTML=html;
+  }
+  document.getElementById('modal-qaqc').style.display='flex';
+}
+
+// Ejecutar el plan guardado en window._qaqcPlan
+function confirmAutoQaqc(){
+  const plan=window._qaqcPlan||[];
+  if(!plan.length){closeModal('modal-qaqc');return;}
+  const tbody=document.getElementById('muest-tbody');
+  const rows=Array.from(tbody.querySelectorAll('tr'));
+  let inserted=0,granMarked=0;
+
+  // Separar acciones por tipo
+  const ctrlActions=plan.filter(p=>p.afterIdx!==-2);
+  const granActions=plan.filter(p=>p.afterIdx===-2);
+
+  // Insertar controles en orden inverso de posición para que los índices no se desplacen
+  const sorted=[...ctrlActions].sort((a,b)=>b.afterIdx-a.afterIdx);
+
+  sorted.forEach(p=>{
+    const tipos=list('tipo_muestra').map(v=>`<option>${v}</option>`).join('');
+    const ctrls=list('tipo_control').map(v=>`<option>${v}</option>`).join('');
+    const oz=p.oz||'';
+    const newTr=document.createElement('tr');
+    newTr.className=p.tipo_muestra==='Control'?'row-ctrl':'row-dup';
+    newTr.dataset.ozVal=oz;
+    newTr.innerHTML=`
+      <td class="num"></td>
+      <td style="text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
+      <td><input data-field="from" type="number" step="0.01" value="${p.from||''}" oninput="calcMuestRow(this)" style="width:58px"></td>
+      <td><input data-field="to" type="number" step="0.01" value="${p.to||''}" oninput="calcMuestRow(this)" style="width:58px"></td>
+      <td class="calc"><span data-field="length">—</span></td>
+      <td><input data-field="n_muestra" style="width:138px" placeholder="${currentHoleId||'BAY-XX-DH-XXXX'}-###"></td>
+      <td><select data-field="tipo_muestra" style="width:62px">${tipos}</select></td>
+      <td><select data-field="tipo_control" style="width:62px">${ctrls}</select></td>
+      <td><input data-field="n_padre" style="width:148px"></td>
+      <td><select data-field="ctrl_gran" style="width:46px"><option>N</option><option>Y</option></select></td>
+      <td><input data-field="fecha" type="date" style="width:116px"></td>
+      <td><input data-field="peso" type="number" step="0.1" style="width:52px"></td>
+      <td><input data-field="comentarios" value="${p.note}" style="width:100px"></td>
+      <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'muest')">✕</button></td>`;
+    newTr.querySelector('[data-field=tipo_muestra]').value=p.tipo_muestra;
+    const ctrlSel=newTr.querySelector('[data-field=tipo_control]');
+    ctrlSel.value=p.tipo_control||'—';
+    calcMuestRow(newTr.querySelector('[data-field=from]'));
+    // Insert after the target row
+    if(p.afterIdx<0||rows.length===0){
+      tbody.appendChild(newTr);
+    } else if(p.afterIdx>=rows.length){
+      tbody.appendChild(newTr);
+    } else {
+      rows[p.afterIdx].after(newTr);
+    }
+    inserted++;
+  });
+
+  // Marcar ctrl_gran=Y en filas PRI existentes
+  granActions.forEach(p=>{
+    rows.forEach(tr=>{
+      const from=tr.querySelector('[data-field=from]')?.value;
+      const to=tr.querySelector('[data-field=to]')?.value;
+      if(from==p.priFrom&&to==p.priTo){
+        const gran=tr.querySelector('[data-field=ctrl_gran]');
+        if(gran&&gran.value!=='Y'){gran.value='Y';granMarked++;}
+      }
+    });
+  });
+
+  reindex('muest');updateCounters();
+  closeModal('modal-qaqc');
+  toast(`🔬 QAQC insertado — ${inserted} controles agregados, ${granMarked} Ctrl Gran marcados`);
+  calcQaqcRecommendations();
+  addLog(`QAQC automático: ${inserted} controles, ${granMarked} Ctrl Gran`);
+}
+
+function calcQaqcRecommendations(){
+  const rows=readMuestData();
+  const priRows=rows.filter(r=>r.tipo_muestra==='PRI');
+  const n=priRows.length;
+  if(n===0){document.getElementById('qaqc-panel').style.display='none';return;}
+  // Criteria percentages
+  const criteria=[
+    {label:'CBK (5%)',type:'CBK',pct:5},
+    {label:'BAY01-19 CRM bajo (5%)',type:'BAY01-19',pct:5},
+    {label:'BAY02-19 CRM medio (5%)',type:'BAY02-19',pct:5},
+    {label:'BAY03-19 CRM alto (5%)',type:'BAY03-19',pct:5},
+    {label:'PDS-dup pulpa (5%)',type:'PDS',pct:5},
+    {label:'CDP-dup prep (2.5%)',type:'CDP',pct:2.5},
+    {label:'TWS-twin (2.5%)',type:'TWS',pct:2.5},
+    {label:'SEC (5%)',type:'SEC',pct:5},
+  ];
+  // Count current insertions
+  const counts={};
+  rows.forEach(r=>{
+    const key=r.tipo_control||r.tipo_muestra;
+    counts[key]=(counts[key]||0)+1;
+  });
+  // Ctrl gran check: 5% of PRI, preferring length > 0.7
+  const granNeeded=Math.max(1,Math.round(n*0.05));
+  const granCurrent=rows.filter(r=>r.ctrl_gran==='Y').length;
+  const longPri=priRows.filter(r=>parseFloat(r.length||r.to-r.from||0)>0.7).length;
+  const panel=document.getElementById('qaqc-panel');
+  const content=document.getElementById('qaqc-content');
+  panel.style.display='';
+  let html=`<span style="color:var(--text2)">Base PRI: <b>${n}</b></span>`;
+  criteria.forEach(({label,type,pct})=>{
+    const needed=Math.max(1,Math.round(n*pct/100));
+    const current=counts[type]||0;
+    const ok=current>=needed;
+    html+=`<span style="background:${ok?'#dcfce7':'#fee2e2'};color:${ok?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:10px;font-weight:600">${label}: ${current}/${needed}</span>`;
+  });
+  html+=`<span style="background:${granCurrent>=granNeeded?'#dcfce7':'#fef3c7'};color:${granCurrent>=granNeeded?'var(--green)':'var(--orange)'};padding:3px 8px;border-radius:10px;font-weight:600">Ctrl Gran (5%): ${granCurrent}/${granNeeded} <span style="font-weight:400;font-size:.75rem">(>0.7m disponibles: ${longPri})</span></span>`;
+  content.innerHTML=html;
+}
 function saveMuestreo(){
   if(!currentHoleId)return;
-  autoSaveCurrent();addLog('Muestreo guardado');toast('💾 Muestreo guardado');
+  autoSaveCurrent();
+  const rows=readMuestData();
+  const pri=rows.filter(r=>r.tipo_muestra==='PRI').length;
+  const ctrl=rows.filter(r=>r.tipo_muestra==='Control').length;
+  const dup=rows.filter(r=>r.tipo_muestra&&r.tipo_muestra!=='PRI'&&r.tipo_muestra!=='Control').length;
+  addLog(`Muestreo guardado: ${rows.length} muestras`);
+  toast(`💾 Muestreo guardado — Total: ${rows.length} | PRI: ${pri} | Controles: ${ctrl} | Duplicados: ${dup}`);
+  calcQaqcRecommendations();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1495,7 +1992,14 @@ function fillFechasDens(){
 }
 function saveDensidad(){
   if(!currentHoleId)return;
-  autoSaveCurrent();addLog('Densidad guardada');toast('💾 Densidad guardada');
+  autoSaveCurrent();
+  const rows=readTableData('dens');
+  const total=rows.length;
+  const dens=rows.filter(r=>r.tipo==='DENS').length;
+  const repe=rows.filter(r=>r.tipo==='REPE').length;
+  const chk=rows.filter(r=>r.tipo==='CHECK').length;
+  addLog(`Densidad guardada: ${total} muestras`);
+  toast(`💾 Densidad guardada — Total: ${total} | DENS: ${dens} | REPE: ${repe} | CHECK: ${chk}`);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1841,8 +2345,16 @@ function switchTab(name){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+name));
   if(name==='log')renderLog();
   if(name==='admin')renderAdmin();
+  if(name==='muestreo')calcQaqcRecommendations();
 }
-function closeModal(id){document.getElementById(id).style.display='none';}
+function closeModal(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.display='none';
+  // Force reflow to ensure backdrop-filter is released immediately
+  el.style.backdropFilter='none';
+  requestAnimationFrame(()=>{el.style.backdropFilter='';});
+}
 function handleUserBtn(){if(currentUser?.rol==='Administrador')switchTab('admin');}
 function toast(msg,type){
   const el=document.getElementById('toast');
