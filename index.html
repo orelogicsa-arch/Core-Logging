@@ -219,8 +219,8 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   <div class="tab" data-tab="header" onclick="switchTab('header')">📋 Header</div>
   <div class="tab" data-tab="marcacion" onclick="switchTab('marcacion')">📏 Marcación</div>
   <div class="tab" data-tab="geologia" onclick="switchTab('geologia')">🪨 Geología</div>
-  <div class="tab" data-tab="muestreo" onclick="switchTab('muestreo')">🧪 Muestreo</div>
   <div class="tab" data-tab="densidad" onclick="switchTab('densidad')">⚖️ Densidad</div>
+  <div class="tab" data-tab="muestreo" onclick="switchTab('muestreo')">🧪 Muestreo</div>
   <div class="tab" data-tab="log" onclick="switchTab('log')">📜 Log</div>
   <div class="tab tab-admin" data-tab="admin" onclick="switchTab('admin')" style="display:none">⚙️ Admin</div>
   <div class="tab" data-tab="instrucciones" onclick="switchTab('instrucciones')">📖 Instrucciones</div>
@@ -243,7 +243,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
     <div class="form-group"><label>Plataforma</label><input id="h-plataforma"></div>
     <div class="form-group"><label>Azimuth (°)</label><input id="h-azimuth" type="number"></div>
     <div class="form-group"><label>Dip (°)</label><input id="h-dip" type="number"></div>
-    <div class="form-group"><label>Prof. Final (m) ★</label><input id="h-profundidad" type="number" oninput="updateProgress()"></div>
+    <div class="form-group"><label>Prof. Final (m) ★</label><input id="h-profundidad" type="number" oninput="updateProgress();markUnsaved()"></div>
     <div class="form-group"><label>Is Completed</label><select id="h-completed"><option>N</option><option>Y</option></select></div>
   </div>
   <div class="section-title">Personal</div>
@@ -252,7 +252,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
     <div class="form-group"><label>Técnico</label><select id="h-tecnico"></select></div>
     <div class="form-group"><label>Cliente</label><select id="h-cliente"></select></div>
     <div class="form-group"><label>Compañía</label><select id="h-compania"></select></div>
-    <div class="form-group"><label>Equipo de Perforación</label><select id="h-perforadora"></select></div>
+    <div class="form-group"><label>Equipo de Perforación</label><select id="h-perforadora" onchange="markUnsaved()"></select></div>
   </div>
   <div class="section-title">Fechas</div>
   <div class="form-grid">
@@ -289,7 +289,6 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
   <div class="btn-group">
     <button class="btn btn-secondary btn-sm" onclick="autoFillMarcacion()">⚡ Rellenar automático</button>
-    <button class="btn btn-primary btn-sm" onclick="saveMarcacion()">💾 Guardar Marcación</button>
   </div>
   <div id="marc-val-banner" class="val-banner" style="display:none"></div>
   <div class="tbl-wrap">
@@ -306,6 +305,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
   <div class="btn-group" style="margin-top:8px;margin-bottom:0">
     <button class="btn btn-info btn-sm" onclick="addMarcRow()">+ Agregar fila</button>
+    <button class="btn btn-primary btn-sm" onclick="saveMarcacion()">💾 Guardar Marcación</button>
   </div>
 </div>
 
@@ -319,7 +319,6 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
   <div id="geo-val-banner" class="val-banner" style="display:none"></div>
   <div class="btn-group">
-    <button class="btn btn-primary btn-sm" onclick="saveGeologia()">💾 Guardar Geología</button>
     <button class="btn btn-secondary btn-sm" onclick="showFillDownMenu(event)">↓ Rellenar abajo</button>
   </div>
   <div class="tbl-wrap">
@@ -328,11 +327,11 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
         <th style="width:36px">#</th>
         <th style="width:72px">From</th><th style="width:72px">To</th><th style="width:52px">Len</th>
         <th style="width:50px">OZ</th>
-        <th style="min-width:70px">Lito 1</th>
-        <th style="min-width:110px">Ore Zone</th>
-        <th style="width:70px">Color</th><th style="width:66px">Intens.</th>
-        <th style="width:80px">Contacto</th><th style="width:68px">Gran.</th>
-        <th style="width:58px">Fós.</th><th style="width:60px">Dens?</th><th style="width:60px">Muest?</th>
+        <th style="width:78px">Lito 1</th>
+        <th style="width:122px">Ore Zone</th>
+        <th style="width:88px">Color</th><th style="width:82px">Intens.</th>
+        <th style="width:100px">Contacto</th><th style="width:85px">Gran.</th>
+        <th style="width:72px">Fós.</th><th style="width:75px">Dens?</th><th style="width:75px">Muest?</th>
         <th>Descripción</th><th style="width:44px"></th>
       </tr></thead>
       <tbody id="geo-tbody"></tbody>
@@ -340,6 +339,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
   <div class="btn-group" style="margin-top:8px;margin-bottom:0">
     <button class="btn btn-info btn-sm" onclick="addGeoRow()">+ Agregar fila</button>
+    <button class="btn btn-primary btn-sm" onclick="saveGeologia()">💾 Guardar Geología</button>
   </div>
 </div>
 
@@ -357,13 +357,13 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
     <button class="btn btn-secondary btn-sm" onclick="autoNumMuest()">⚡ Auto-numerar</button>
     <button class="btn btn-secondary btn-sm" onclick="fillFechasMuest()">📅 Rellenar fechas</button>
     <button class="btn btn-secondary btn-sm" onclick="printMuestreo()">🖨️ Plan de Muestreo</button>
-    <button class="btn btn-primary btn-sm" onclick="saveMuestreo()">💾 Guardar Muestreo</button>
   </div>
   <div class="tbl-wrap">
     <table>
       <thead><tr>
         <th style="width:36px">#</th><th style="width:30px">OZ</th>
         <th style="width:72px">From</th><th style="width:72px">To</th><th style="width:52px">Len</th>
+        <th style="width:143px">Lito 1</th><th style="width:176px">Ore Zone</th>
         <th style="width:172px">N° Muestra</th><th style="width:90px">Tipo Muestra</th>
         <th style="width:90px">Tipo Control</th>
         <th style="width:172px">N° M.Padre</th><th style="width:56px">Ctrl Gran?</th>
@@ -375,6 +375,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
   <div class="btn-group" style="margin-top:8px;margin-bottom:0">
     <button class="btn btn-info btn-sm" onclick="addMuestRow()">+ Agregar fila</button>
+    <button class="btn btn-primary btn-sm" onclick="saveMuestreo()">💾 Guardar Muestreo</button>
   </div>
 </div>
 
@@ -384,7 +385,6 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
     <button class="btn btn-secondary btn-sm" onclick="importFromGeologiaDens()">📥 Importar de Geología (DENS=Y)</button>
     <button class="btn btn-secondary btn-sm" onclick="autoNumDens()">⚡ Auto-numerar</button>
     <button class="btn btn-secondary btn-sm" onclick="fillFechasDens()">📅 Rellenar fechas</button>
-    <button class="btn btn-primary btn-sm" onclick="saveDensidad()">💾 Guardar Densidad</button>
   </div>
   <div class="tbl-wrap">
     <table>
@@ -410,6 +410,7 @@ td.calc{color:var(--text3);font-family:var(--mono);font-size:.78rem}
   </div>
   <div class="btn-group" style="margin-top:8px;margin-bottom:0">
     <button class="btn btn-info btn-sm" onclick="addDensRow()">+ Agregar fila</button>
+    <button class="btn btn-primary btn-sm" onclick="saveDensidad()">💾 Guardar Densidad</button>
   </div>
 </div>
 
@@ -946,11 +947,11 @@ function loadHeaderData(h){
   f('h-metodo-topo',h.metodo_topo);f('h-comentarios',h.comentarios);
 }
 function readHeaderData(){
-  const g=id=>document.getElementById(id)?.value||'';
+  const g=id=>{const el=document.getElementById(id);return el!=null?el.value:'';};
   return {
     id:g('h-id'),proyecto:g('h-proyecto'),fase:g('h-fase'),tipo:g('h-tipo'),
     diametro:g('h-diametro'),ubicacion:g('h-ubicacion'),plataforma:g('h-plataforma'),
-    azimuth:g('h-azimuth'),dip:g('h-dip'),profundidad:parseFloat(g('h-profundidad'))||0,
+    azimuth:g('h-azimuth'),dip:g('h-dip'),profundidad:g('h-profundidad')!==''?parseFloat(g('h-profundidad')):0,
     completed:g('h-completed'),geologo:g('h-geologo'),tecnico:g('h-tecnico'),
     cliente:g('h-cliente'),compania:g('h-compania'),perforadora:g('h-perforadora'),
     fecha_inicio:g('h-fecha-inicio'),fecha_fin:g('h-fecha-fin'),
@@ -1039,7 +1040,7 @@ function addMarcRow(fromVal){
     <td><input data-field="comentarios" style="width:100%;min-width:100px"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'marc')">✕</button></td>`;
   tbody.appendChild(tr);
-  reindex('marc');updateCounters();updateProgress();
+  reindex('marc');updateCounters();updateProgress();_pendingUnsaved=true;
 }
 function calcMarcRow(el){
   const tr=el.closest('tr');
@@ -1049,8 +1050,21 @@ function calcMarcRow(el){
   const rm=parseFloat(tr.querySelector('[data-field=rec_m]')?.value)||0;
   const rg=parseFloat(tr.querySelector('[data-field=rec_geo]')?.value)||0;
   tr.querySelector('[data-field=length]').textContent=len>0?len.toFixed(2):'—';
-  tr.querySelector('[data-field=rec_pct]').textContent=len>0?((rm/len)*100).toFixed(1)+'%':'—';
-  tr.querySelector('[data-field=rec_geo_pct]').textContent=len>0?((rg/len)*100).toFixed(1)+'%':'—';
+  const recPct=len>0?(rm/len)*100:null;
+  const recGeoPct=len>0?(rg/len)*100:null;
+  function colorRecCell(span, pct){
+    if(pct===null){span.textContent='—';span.style.cssText='';return;}
+    span.textContent=pct.toFixed(1)+'%';
+    if(pct<70){
+      span.style.cssText='font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 4px;border-radius:3px';
+    } else if(pct<=95){
+      span.style.cssText='font-weight:700;color:#92400e;background:#fef3c7;padding:1px 4px;border-radius:3px';
+    } else {
+      span.style.cssText='font-weight:700;color:#166534;background:#dcfce7;padding:1px 4px;border-radius:3px';
+    }
+  }
+  colorRecCell(tr.querySelector('[data-field=rec_pct]'), recPct);
+  colorRecCell(tr.querySelector('[data-field=rec_geo_pct]'), recGeoPct);
   updateProgress();
 }
 function validateMarcacion(){
@@ -1080,7 +1094,7 @@ function addMarcRowFromData(r){
 }
 function saveMarcacion(){
   if(!currentHoleId)return;
-  autoSaveCurrent();addLog('Marcación guardada');toast('💾 Marcación guardada');
+  autoSaveCurrent();_pendingUnsaved=false;addLog('Marcación guardada');toast('💾 Marcación guardada');
 }
 function autoFillMarcacion(){
   if(!currentHoleId){toast('Cargue un sondaje','warn');return;}
@@ -1138,19 +1152,19 @@ function addGeoRow(fromVal){
     <td style="width:72px"><input data-field="to" type="number" step="0.01" oninput="calcGeoRow(this);validateGeologia();checkGeoToRange(this)" style="width:100%"></td>
     <td class="calc" style="width:52px"><span data-field="length">—</span></td>
     <td data-field="simb_cell" style="text-align:center;width:50px">${ozChip('')}</td>
-    <td style="min-width:70px"><select data-field="lito1" style="width:100%">${mkSel('litologia',true)}</select></td>
-    <td style="min-width:110px"><select data-field="ore_zone" style="width:100%" onchange="onGeoOzChange(this);highlightGeoMuest(this)">${mkSel('ore_zone',true)}</select></td>
-    <td style="width:70px"><select data-field="color" style="width:100%">${mkSel('color',true)}</select></td>
-    <td style="width:66px"><select data-field="intensidad" style="width:100%">${mkSel('intensidad',true)}</select></td>
-    <td style="width:80px"><select data-field="contacto" style="width:100%">${mkSel('contacto',true)}</select></td>
-    <td style="width:68px"><select data-field="granulometria" style="width:100%">${mkSel('granulometria',true)}</select></td>
-    <td style="width:58px"><select data-field="fosiles" style="width:100%">${mkSel('fosiles',true)}</select></td>
-    <td style="width:60px"><select data-field="dens" style="width:100%" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
-    <td style="width:60px"><select data-field="muestrea" style="width:100%" onchange="renderYN(this);highlightGeoMuest(this)"><option>N</option><option>Y</option></select></td>
+    <td style="width:78px"><select data-field="lito1" style="width:100%">${mkSel('litologia',true)}</select></td>
+    <td style="width:122px"><select data-field="ore_zone" style="width:100%" onchange="onGeoOzChange(this);highlightGeoMuest(this)">${mkSel('ore_zone',true)}</select></td>
+    <td style="width:88px"><select data-field="color" style="width:100%">${mkSel('color',true)}</select></td>
+    <td style="width:82px"><select data-field="intensidad" style="width:100%">${mkSel('intensidad',true)}</select></td>
+    <td style="width:100px"><select data-field="contacto" style="width:100%">${mkSel('contacto',true)}</select></td>
+    <td style="width:85px"><select data-field="granulometria" style="width:100%">${mkSel('granulometria',true)}</select></td>
+    <td style="width:72px"><select data-field="fosiles" style="width:100%">${mkSel('fosiles',true)}</select></td>
+    <td style="width:75px"><select data-field="dens" style="width:100%" onchange="renderYN(this)"><option>N</option><option>Y</option></select></td>
+    <td style="width:75px"><select data-field="muestrea" style="width:100%" onchange="renderYN(this);highlightGeoMuest(this)"><option>N</option><option>Y</option></select></td>
     <td><input data-field="descripcion" style="width:100%"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'geo')">✕</button></td>`;
   tbody.appendChild(tr);
-  reindex('geo');updateCounters();updateProgress();
+  reindex('geo');updateCounters();updateProgress();_pendingUnsaved=true;
 }
 // Validate To against profundidad final — highlight red if exceeded
 function checkGeoToRange(el){
@@ -1175,8 +1189,8 @@ function fillDownGeo(field){
   rows.forEach(tr=>{
     const el=tr.querySelector(`[data-field=${field}]`);
     if(!el)return;
-    const val=el.value||el.textContent||'';
-    if(val&&val!=='—'){lastVal=val;}
+    const val=el.value!==''?el.value:(el.textContent!=='—'?el.textContent:'');
+    if(val!==''&&val!=='—'){lastVal=val;}
     else if(!val&&lastVal){
       el.value=lastVal;
       if(el.tagName==='SELECT'){
@@ -1270,7 +1284,7 @@ function addGeoRowFromData(r){
 }
 function saveGeologia(){
   if(!currentHoleId)return;
-  autoSaveCurrent();addLog('Geología guardada');toast('💾 Geología guardada');
+  autoSaveCurrent();_pendingUnsaved=false;addLog('Geología guardada');toast('💾 Geología guardada');
 }
 
 // ═══════════════════════════════════════════════════
@@ -1294,6 +1308,8 @@ function _addMuestTr(data){
     <td style="width:72px"><input data-field="from" type="number" step="0.01" value="${from.toFixed(2)}" oninput="calcMuestRow(this)" style="width:100%"></td>
     <td style="width:72px"><input data-field="to" type="number" step="0.01" oninput="calcMuestRow(this)" style="width:100%"></td>
     <td class="calc" style="width:52px"><span data-field="length">—</span></td>
+    <td style="width:111px"><span data-field="lito1_disp" style="font-size:.78rem;color:var(--text2)"></span></td>
+    <td style="width:135px"><span data-field="ore_zone_disp" style="font-size:.78rem;color:var(--text2);font-weight:600"></span></td>
     <td style="width:172px"><input data-field="n_muestra" style="width:100%" placeholder="${currentHoleId||'BAY-26-DH-XXXX'}-###"></td>
     <td style="width:90px"><select data-field="tipo_muestra" style="width:100%">${tipos}</select></td>
     <td style="width:90px"><select data-field="tipo_control" style="width:100%">${ctrls}</select></td>
@@ -1304,6 +1320,8 @@ function _addMuestTr(data){
     <td><input data-field="comentarios" style="width:100%;min-width:100px"></td>
     <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'muest')">✕</button></td>`;
   tbody.appendChild(tr);
+  tr.dataset.ozVal=oz;
+  tr.dataset.lito1Val=data?.lito1||'';
   if(data){
     const s=(f,v)=>{const el=tr.querySelector(`[data-field=${f}]`);if(el&&v!=null)el.value=v;};
     s('from',data.from);s('to',data.to);s('n_muestra',data.n_muestra);
@@ -1311,15 +1329,19 @@ function _addMuestTr(data){
     if(data.tipo_control)tr.querySelector('[data-field=tipo_control]').value=data.tipo_control||'—';
     s('n_padre',data.n_padre);s('ctrl_gran',data.ctrl_gran||'N');s('fecha',data.fecha);
     s('peso',data.peso);s('comentarios',data.comentarios);
-    // restore oz chip color from saved data
     const chip=tr.querySelector('[data-field=oz_val]');
     if(chip){chip.style.background=ozColor(oz);chip.title=oz||'—';}
+    // Fill display-only lito1 and ore_zone spans
+    const l1sp=tr.querySelector('[data-field=lito1_disp]');
+    if(l1sp)l1sp.textContent=data.lito1||'';
+    const ozsp=tr.querySelector('[data-field=ore_zone_disp]');
+    if(ozsp)ozsp.textContent=oz||'';
   }
   if(data?.row_class)tr.classList.add(data.row_class);
   calcMuestRow(tr.querySelector('[data-field=from]'));
   return tr;
 }
-function addMuestRow(){_addMuestTr({});reindex('muest');updateCounters();}
+function addMuestRow(){_addMuestTr({});reindex('muest');updateCounters();_pendingUnsaved=true;}
 function addMuestRowFromData(r){_addMuestTr(r);reindex('muest');updateCounters();}
 function calcMuestRow(el){
   if(!el)return;
@@ -1335,7 +1357,7 @@ function readMuestData(){
   if(!tbody)return[];
   const rows=[];
   tbody.querySelectorAll('tr').forEach(tr=>{
-    const obj={ore_zone:tr.dataset.ozVal||''};
+    const obj={ore_zone:tr.dataset.ozVal||'', lito1:tr.dataset.lito1Val||''};
     tr.querySelectorAll('[data-field]').forEach(el=>{
       if(el.tagName==='INPUT'||el.tagName==='SELECT'||el.tagName==='TEXTAREA'){
         obj[el.dataset.field]=el.value;
@@ -1345,6 +1367,8 @@ function readMuestData(){
       }
     });
     delete obj.oz_val;
+    delete obj.lito1_disp;
+    delete obj.ore_zone_disp;
     rows.push(obj);
   });
   return rows;
@@ -1388,10 +1412,12 @@ function insertDup(){
   newTr.dataset.ozVal=oz;
   newTr.innerHTML=`
     <td class="num"></td>
-    <td style="text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
+    <td style="width:30px;text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
     <td style="width:72px"><input data-field="from" type="number" step="0.01" value="${from}" oninput="calcMuestRow(this)" style="width:100%"></td>
     <td style="width:72px"><input data-field="to" type="number" step="0.01" value="${to}" oninput="calcMuestRow(this)" style="width:100%"></td>
     <td class="calc" style="width:52px"><span data-field="length">—</span></td>
+    <td style="width:111px"><span data-field="lito1_disp" style="font-size:.78rem;color:var(--text2)"></span></td>
+    <td style="width:135px"><span data-field="ore_zone_disp" style="font-size:.78rem;color:var(--text2);font-weight:600">${oz}</span></td>
     <td style="width:172px"><input data-field="n_muestra" style="width:100%"></td>
     <td style="width:90px"><select data-field="tipo_muestra" style="width:100%">${tipos}</select></td>
     <td style="width:90px"><select data-field="tipo_control" style="width:100%">${ctrls}</select></td>
@@ -1430,10 +1456,12 @@ function insertCtrl(){
   newTr.dataset.ozVal='';
   newTr.innerHTML=`
     <td class="num"></td>
-    <td style="text-align:center"><div class="oz-chip" data-field="oz_val" style="background:#94a3b8;display:inline-block" title="—"></div></td>
-    <td><input data-field="from" type="number" step="0.01" style="width:58px"></td>
-    <td><input data-field="to" type="number" step="0.01" style="width:58px"></td>
+    <td style="width:30px;text-align:center"><div class="oz-chip" data-field="oz_val" style="background:#94a3b8;display:inline-block" title="—"></div></td>
+    <td style="width:72px"><input data-field="from" type="number" step="0.01" style="width:100%"></td>
+    <td style="width:72px"><input data-field="to" type="number" step="0.01" style="width:100%"></td>
     <td class="calc" style="width:52px"><span data-field="length">—</span></td>
+    <td style="width:111px"><span data-field="lito1_disp" style="font-size:.78rem;color:var(--text2)"></span></td>
+    <td style="width:135px"><span data-field="ore_zone_disp" style="font-size:.78rem;color:var(--text2);font-weight:600"></span></td>
     <td style="width:172px"><input data-field="n_muestra" style="width:100%" placeholder="${currentHoleId||'BAY-26-DH-XXXX'}-###"></td>
     <td style="width:90px"><select data-field="tipo_muestra" style="width:100%">${tipos}</select></td>
     <td style="width:90px"><select data-field="tipo_control" style="width:100%">${ctrls}</select></td>
@@ -1553,27 +1581,31 @@ function autoInsertQaqc(){
   const n=priRows.length;
   if(n===0){toast('Importe primero las muestras PRI desde Geología','warn');return;}
 
-  // Cantidades requeridas (redondeando al entero mayor mínimo 1)
+  // Cantidades requeridas
+  // CRM total = 5% de PRI (los tres tipos juntos, no cada uno por separado)
+  const crmTotal=Math.max(1,Math.round(n*0.05));
   const req={
-    CBK:    Math.max(1,Math.round(n*0.05)),
-    BAY01:  Math.max(1,Math.round(n*0.05)),
-    BAY02:  Math.max(1,Math.round(n*0.05)),
-    BAY03:  Math.max(1,Math.round(n*0.05)),
-    PDS:    Math.max(1,Math.round(n*0.05)),
-    CDP:    Math.max(1,Math.round(n*0.025)),
-    TWS:    Math.max(1,Math.round(n*0.025)),
-    GRAN:   Math.max(1,Math.round(n*0.05)), // ctrl_gran=Y
+    CBK:      Math.max(1,Math.round(n*0.05)),
+    CRM_TOTAL: crmTotal,   // total de los tres CRM juntos
+    PDS:      Math.max(1,Math.round(n*0.05)),
+    CDP:      Math.max(1,Math.round(n*0.025)),
+    TWS:      Math.max(1,Math.round(n*0.025)),
+    GRAN:     Math.max(1,Math.round(n*0.05)),
   };
 
-  // Contar controles ya existentes por tipo_control
-  const existing={CBK:0,'BAY01-19':0,'BAY02-19':0,'BAY03-19':0,PDS:0,CDP:0,TWS:0,GRAN:0};
+  // Contar controles ya existentes
+  const existing={
+    CBK:0, 'BAY01-19':0,'BAY02-19':0,'BAY03-19':0,
+    CRM_TOTAL:0,   // suma de los tres
+    PDS:0,CDP:0,TWS:0,GRAN:0
+  };
   rows.forEach(r=>{
     if(r.tipo_muestra==='Control'){
       const tc=r.tipo_control;
       if(tc==='CBK')existing.CBK++;
-      else if(tc==='BAY01-19')existing['BAY01-19']++;
-      else if(tc==='BAY02-19')existing['BAY02-19']++;
-      else if(tc==='BAY03-19')existing['BAY03-19']++;
+      else if(tc==='BAY01-19'){existing['BAY01-19']++;existing.CRM_TOTAL++;}
+      else if(tc==='BAY02-19'){existing['BAY02-19']++;existing.CRM_TOTAL++;}
+      else if(tc==='BAY03-19'){existing['BAY03-19']++;existing.CRM_TOTAL++;}
     }
     if(r.tipo_muestra==='PDS')existing.PDS++;
     if(r.tipo_muestra==='CDP')existing.CDP++;
@@ -1643,94 +1675,175 @@ function autoInsertQaqc(){
     }
   }
 
-  // ── BAY01-19: después de DIS, DAR, DIF ──
-  const bay01Needed=Math.max(0,req.BAY01-existing['BAY01-19']);
-  if(bay01Needed>0){
-    const pos=pickPriPos(QAQC_BAY01_OZ,bay01Needed,true);
-    pos.forEach(p=>plan.push({
-      afterIdx:p.rowPos, tipo_muestra:'Control', tipo_control:'BAY01-19',
-      from:'',to:'',oz:'', note:`BAY01-19 (ley baja) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`
-    }));
+  // ── CRM TOTAL = 5%: repartir entre BAY01, BAY02, BAY03 según OZ disponibles ──
+  // Estrategia: primero asignar a OZ específicas, luego completar con BAY02 (más genérico)
+  const crmNeeded=Math.max(0,req.CRM_TOTAL-existing.CRM_TOTAL);
+  if(crmNeeded>0){
+    let crmLeft=crmNeeded;
+
+    // Contar PRI elegibles por tipo
+    const bay03Pri=priRows.filter(pr=>QAQC_BAY03_OZ.has(pr.ore_zone||''));
+    const bay01Pri=priRows.filter(pr=>QAQC_BAY01_OZ.has(pr.ore_zone||''));
+
+    // Asignar BAY03 (CA1, CA3) — máximo hasta las disponibles o 1/3 del total
+    const bay03Max=Math.min(bay03Pri.length, Math.max(1,Math.floor(crmNeeded/3)));
+    const bay03Needed=Math.max(0,bay03Max-existing['BAY03-19']);
+    if(bay03Needed>0){
+      const pos=pickPriPos(QAQC_BAY03_OZ,bay03Needed,false);
+      pos.forEach(p=>{
+        plan.push({afterIdx:p.rowPos,tipo_muestra:'Control',tipo_control:'BAY03-19',
+          from:'',to:'',oz:'',note:`BAY03-19 (ley alta) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`});
+      });
+      crmLeft-=pos.length;
+    }
+
+    // Asignar BAY01 (DIS, DAR, DIF) — máximo hasta las disponibles o 1/3 del total
+    const bay01Max=Math.min(bay01Pri.length, Math.max(1,Math.floor(crmNeeded/3)));
+    const bay01Needed=Math.max(0,Math.min(bay01Max,crmLeft)-existing['BAY01-19']);
+    if(bay01Needed>0){
+      const pos=pickPriPos(QAQC_BAY01_OZ,bay01Needed,false);
+      pos.forEach(p=>{
+        plan.push({afterIdx:p.rowPos,tipo_muestra:'Control',tipo_control:'BAY01-19',
+          from:'',to:'',oz:'',note:`BAY01-19 (ley baja) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`});
+      });
+      crmLeft-=pos.length;
+    }
+
+    // BAY02 completa el resto del 5% (CA4, CA2, UF, CA5, UFS0, CA0, o cualquier OZ)
+    const bay02Needed=Math.max(0,crmLeft-existing['BAY02-19']);
+    if(bay02Needed>0){
+      const pos=pickPriPos(QAQC_BAY02_OZ,bay02Needed,true);
+      pos.forEach(p=>{
+        plan.push({afterIdx:p.rowPos,tipo_muestra:'Control',tipo_control:'BAY02-19',
+          from:'',to:'',oz:'',note:`BAY02-19 (ley media) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`});
+      });
+    }
   }
 
-  // ── BAY02-19: después de CA4, CA2, UF, CA5, UFS0, CA0 ──
-  const bay02Needed=Math.max(0,req.BAY02-existing['BAY02-19']);
-  if(bay02Needed>0){
-    const pos=pickPriPos(QAQC_BAY02_OZ,bay02Needed,true);
-    pos.forEach(p=>plan.push({
-      afterIdx:p.rowPos, tipo_muestra:'Control', tipo_control:'BAY02-19',
-      from:'',to:'',oz:'', note:`BAY02-19 (ley media) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`
-    }));
+  // ══════════════════════════════════════════════════════════════════
+  // TWS, PDS, CDP — nueva lógica según protocolo:
+  //  1. TWS: del tramo DIS/DAR/DIF más grande (>60cm), posición no inmediata
+  //  2. PDS + CDP: del siguiente tramo más grande (diferente al TWS), no inmediato
+  //  3. Todos separados mínimo 3 PRI de su fuente Y mínimo 3 PRI entre sí
+  // ══════════════════════════════════════════════════════════════════
+
+  // Helper: posición de inserción con offset mínimo desde el idx fuente
+  // Inserta después del PRI en posición (srcIdx + minGap) módulo total, nunca en srcIdx+1
+  const getInsertPosWithOffset=(srcIdx, minGap)=>{
+    // Buscar la siguiente posición disponible al menos minGap lugares adelante
+    for(let offset=minGap; offset<priRows.length; offset++){
+      const targetIdx=(srcIdx+offset)%priRows.length;
+      if(!usedAfterPri.has(targetIdx)){
+        return {insertPos:getInsertPos(targetIdx), usedIdx:targetIdx};
+      }
+    }
+    // Fallback: al final
+    return {insertPos:-1, usedIdx:-1};
+  };
+
+  function evenSpreadSorted(arr, count){
+    if(!arr.length||count<=0)return[];
+    if(arr.length<=count)return arr.slice(0,count);
+    const step=arr.length/count;
+    const picked=[];
+    for(let i=0;i<count;i++){
+      const idx=Math.min(arr.length-1, Math.round(i*step+step/2));
+      if(arr[idx])picked.push(arr[idx]);
+    }
+    return picked.filter(Boolean);
   }
 
-  // ── BAY03-19: después de CA1, CA3 ──
-  const bay03Needed=Math.max(0,req.BAY03-existing['BAY03-19']);
-  if(bay03Needed>0){
-    const pos=pickPriPos(QAQC_BAY03_OZ,bay03Needed,true);
-    pos.forEach(p=>plan.push({
-      afterIdx:p.rowPos, tipo_muestra:'Control', tipo_control:'BAY03-19',
-      from:'',to:'',oz:'', note:`BAY03-19 (ley alta) después de ${p.priRow.ore_zone} [${p.priRow.from}–${p.priRow.to}]`
-    }));
+  // ── TWS: del tramo DIS/DAR/DIF MÁS GRANDE (>60cm), ordenado por length desc ──
+  const twsNeeded=Math.max(0,req.TWS-existing.TWS);
+  const twsSourceRows=[]; // guardar fuentes para excluir de PDS/CDP
+  if(twsNeeded>0){
+    // Ordenar DIS por length descendente
+    const eligTwsSorted=priRows
+      .map((pr,idx)=>({pr,idx,len:parseFloat(pr.length)||0}))
+      .filter(({pr,len})=>(QAQC_TWS_OZ.has(pr.ore_zone||'')||pr.ore_zone==='DAR'||pr.ore_zone==='DIF')&&len>=0.6)
+      .sort((a,b)=>b.len-a.len); // mayor primero
+
+    // Si no hay suficientes DIS, completar con cualquier >60cm
+    const eligFallback=priRows
+      .map((pr,idx)=>({pr,idx,len:parseFloat(pr.length)||0}))
+      .filter(({idx,len})=>len>=0.6&&!eligTwsSorted.find(t=>t.idx===idx))
+      .sort((a,b)=>b.len-a.len);
+
+    const allEligTws=[...eligTwsSorted,...eligFallback];
+    let twsInserted=0;
+    for(const {pr,idx,len} of allEligTws){
+      if(twsInserted>=twsNeeded)break;
+      // Posición de inserción: mínimo 3 PRI después del tramo fuente
+      const {insertPos,usedIdx}=getInsertPosWithOffset(idx,3);
+      if(usedIdx===-1)continue;
+      plan.push({afterIdx:insertPos,tipo_muestra:'TWS',tipo_control:'—',
+        from:pr.from,to:pr.to,oz:pr.ore_zone,lito1:pr.lito1||'',
+        note:`TWS gemelo de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m → insertado separado`});
+      usedAfterPri.add(usedIdx);
+      twsSourceRows.push(idx); // marcar fuente como usada para PDS/CDP
+      twsInserted++;
+    }
   }
 
-  // ── PDS: cualquier intervalo >40cm; si PDS+CDP juntos >60cm ──
+  // ── PDS + CDP: del siguiente tramo MÁS GRANDE después del TWS, no inmediato ──
   const pdsNeeded=Math.max(0,req.PDS-existing.PDS);
   const cdpNeeded=Math.max(0,req.CDP-existing.CDP);
   if(pdsNeeded>0||cdpNeeded>0){
-    // Candidatos: PRI con length adecuada
-    let pdsInserted=0,cdpInserted=0;
-    priRows.forEach((pr,idx)=>{
-      if(pdsInserted>=pdsNeeded&&cdpInserted>=cdpNeeded)return;
-      const len=parseFloat(pr.length)||0;
-      const lastUsed2=Array.from(usedAfterPri).filter(i=>i<idx);
-      const minGap2=lastUsed2.length===0||idx-(Math.max(...lastUsed2))>=3;
-      if(!minGap2||usedAfterPri.has(idx))return;
-      const rowPos=getInsertPos(idx);
-      if(pdsInserted<pdsNeeded&&cdpInserted<cdpNeeded&&len>=0.6){
-        // PDS + CDP juntos (>60cm)
-        plan.push({afterIdx:rowPos,tipo_muestra:'PDS',tipo_control:'—',
-          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`PDS (dup. fino) de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
-        plan.push({afterIdx:rowPos,tipo_muestra:'CDP',tipo_control:'—',
-          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`CDP (dup. grueso) de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
-        usedAfterPri.add(idx);pdsInserted++;cdpInserted++;
-      } else if(pdsInserted<pdsNeeded&&len>=0.4){
-        plan.push({afterIdx:rowPos,tipo_muestra:'PDS',tipo_control:'—',
-          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`PDS (dup. fino) de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
-        usedAfterPri.add(idx);pdsInserted++;
-      } else if(cdpInserted<cdpNeeded&&len>=0.4){
-        plan.push({afterIdx:rowPos,tipo_muestra:'CDP',tipo_control:'—',
-          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`CDP (dup. grueso) de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
-        usedAfterPri.add(idx);cdpInserted++;
-      }
-    });
-  }
+    // Candidatos ordenados por length desc, excluyendo fuentes de TWS
+    const eligDupSorted=priRows
+      .map((pr,idx)=>({pr,idx,len:parseFloat(pr.length)||0}))
+      .filter(({idx,len})=>!twsSourceRows.includes(idx)&&len>=0.4)
+      .sort((a,b)=>b.len-a.len);
 
-  // ── TWS: DIS con potencia >60cm ──
-  const twsNeeded=Math.max(0,req.TWS-existing.TWS);
-  if(twsNeeded>0){
-    let twsInserted=0;
-    priRows.forEach((pr,idx)=>{
-      if(twsInserted>=twsNeeded)return;
-      const oz=pr.ore_zone||'';
-      const len=parseFloat(pr.length)||0;
-      const lastUsed3=Array.from(usedAfterPri).filter(i=>i<idx);
-      const minGap3=lastUsed3.length===0||idx-(Math.max(...lastUsed3))>=3;
-      if((oz==='DIS'||oz==='DAR'||oz==='DIF')&&len>=0.6&&minGap3&&!usedAfterPri.has(idx)){
-        const rowPos=getInsertPos(idx);
-        plan.push({afterIdx:rowPos,tipo_muestra:'TWS',tipo_control:'—',
-          from:pr.from,to:pr.to,oz:pr.ore_zone,note:`TWS (gemelo) de ${oz} [${pr.from}–${pr.to}] len=${len.toFixed(2)}m`});
-        usedAfterPri.add(idx);twsInserted++;
+    const eligBothSorted=eligDupSorted.filter(({len})=>len>=0.6);
+
+    let pdsPlaced=0, cdpPlaced=0;
+
+    // Primero PDS+CDP juntos del tramo más grande >=60cm
+    for(const {pr,idx,len} of eligBothSorted){
+      if(pdsPlaced>=pdsNeeded&&cdpPlaced>=cdpNeeded)break;
+      const {insertPos,usedIdx}=getInsertPosWithOffset(idx,3);
+      if(usedIdx===-1)continue;
+      if(pdsPlaced<pdsNeeded){
+        plan.push({afterIdx:insertPos,tipo_muestra:'PDS',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,lito1:pr.lito1||'',
+          note:`PDS dup fino de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m → separado`});
+        pdsPlaced++;
       }
-    });
-    // Si no hubo suficientes DIS >60cm, completar con cualquiera
-    if(twsInserted<twsNeeded){
-      const pos=pickPriPos(new Set(),twsNeeded-twsInserted,true);
-      pos.forEach(p=>{
-        const len=parseFloat(p.priRow.length)||0;
-        if(len>=0.6)plan.push({afterIdx:p.rowPos,tipo_muestra:'TWS',tipo_control:'—',
-          from:p.priRow.from,to:p.priRow.to,oz:p.priRow.ore_zone,
-          note:`TWS (gemelo) de [${p.priRow.from}–${p.priRow.to}] len=${len.toFixed(2)}m (selección manual recomendada)`});
-      });
+      if(cdpPlaced<cdpNeeded&&len>=0.6){
+        plan.push({afterIdx:insertPos,tipo_muestra:'CDP',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,lito1:pr.lito1||'',
+          note:`CDP dup grueso de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m → separado`});
+        cdpPlaced++;
+      }
+      usedAfterPri.add(usedIdx);
+    }
+
+    // PDS restantes solos (>=40cm) si no cubrió el total
+    if(pdsPlaced<pdsNeeded){
+      const eligPdsSolo=eligDupSorted.filter(({idx,len})=>!usedAfterPri.has(idx)&&len>=0.4);
+      for(const {pr,idx,len} of eligPdsSolo){
+        if(pdsPlaced>=pdsNeeded)break;
+        const {insertPos,usedIdx}=getInsertPosWithOffset(idx,3);
+        if(usedIdx===-1)continue;
+        plan.push({afterIdx:insertPos,tipo_muestra:'PDS',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,lito1:pr.lito1||'',
+          note:`PDS dup fino de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m → separado`});
+        usedAfterPri.add(usedIdx); pdsPlaced++;
+      }
+    }
+    // CDP restantes solos (>=60cm)
+    if(cdpPlaced<cdpNeeded){
+      const eligCdpSolo=eligBothSorted.filter(({idx})=>!usedAfterPri.has(idx));
+      for(const {pr,idx,len} of eligCdpSolo){
+        if(cdpPlaced>=cdpNeeded)break;
+        const {insertPos,usedIdx}=getInsertPosWithOffset(idx,3);
+        if(usedIdx===-1)continue;
+        plan.push({afterIdx:insertPos,tipo_muestra:'CDP',tipo_control:'—',
+          from:pr.from,to:pr.to,oz:pr.ore_zone,lito1:pr.lito1||'',
+          note:`CDP dup grueso de [${pr.from}–${pr.to}] len=${len.toFixed(2)}m → separado`});
+        usedAfterPri.add(usedIdx); cdpPlaced++;
+      }
     }
   }
 
@@ -1780,8 +1893,8 @@ function autoInsertQaqc(){
     html+='</table>';
     // Resumen de cobertura
     html+=`<div style="margin-top:10px;font-size:.78rem;color:var(--text3)">
-      <b>Requerido:</b> CBK ${req.CBK} | BAY01 ${req.BAY01} | BAY02 ${req.BAY02} | BAY03 ${req.BAY03} | PDS ${req.PDS} | CDP ${req.CDP} | TWS ${req.TWS} | Ctrl Gran ${req.GRAN}<br>
-      <b>Existente:</b> CBK ${existing.CBK} | BAY01 ${existing['BAY01-19']} | BAY02 ${existing['BAY02-19']} | BAY03 ${existing['BAY03-19']} | PDS ${existing.PDS} | CDP ${existing.CDP} | TWS ${existing.TWS} | Ctrl Gran ${existing.GRAN}
+      <b>Requerido:</b> CBK ${req.CBK} | CRM total ${req.CRM_TOTAL} (BAY01+BAY02+BAY03) | PDS ${req.PDS} | CDP ${req.CDP} | TWS ${req.TWS} | Ctrl Gran ${req.GRAN}<br>
+      <b>Existente:</b> CBK ${existing.CBK} | CRM total ${existing.CRM_TOTAL} (BAY01:${existing['BAY01-19']} BAY02:${existing['BAY02-19']} BAY03:${existing['BAY03-19']}) | PDS ${existing.PDS} | CDP ${existing.CDP} | TWS ${existing.TWS} | Ctrl Gran ${existing.GRAN}
     </div>`;
     preview.innerHTML=html;
   }
@@ -1812,18 +1925,20 @@ function confirmAutoQaqc(){
     newTr.dataset.ozVal=oz;
     newTr.innerHTML=`
       <td class="num"></td>
-      <td style="text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
-      <td><input data-field="from" type="number" step="0.01" value="${p.from||''}" oninput="calcMuestRow(this)" style="width:100%"></td>
-      <td><input data-field="to" type="number" step="0.01" value="${p.to||''}" oninput="calcMuestRow(this)" style="width:100%"></td>
+      <td style="width:30px;text-align:center"><div class="oz-chip" data-field="oz_val" style="background:${ozColor(oz)};display:inline-block" title="${oz||'—'}"></div></td>
+      <td style="width:72px"><input data-field="from" type="number" step="0.01" value="${p.from||''}" oninput="calcMuestRow(this)" style="width:100%"></td>
+      <td style="width:72px"><input data-field="to" type="number" step="0.01" value="${p.to||''}" oninput="calcMuestRow(this)" style="width:100%"></td>
       <td class="calc" style="width:52px"><span data-field="length">—</span></td>
-      <td><input data-field="n_muestra" style="width:138px" placeholder="${currentHoleId||'BAY-XX-DH-XXXX'}-###"></td>
+      <td style="width:111px"><span data-field="lito1_disp" style="font-size:.78rem;color:var(--text2)">${p.lito1||''}</span></td>
+      <td style="width:135px"><span data-field="ore_zone_disp" style="font-size:.78rem;color:var(--text2);font-weight:600">${oz}</span></td>
+      <td style="width:172px"><input data-field="n_muestra" style="width:100%" placeholder="${currentHoleId||'BAY-XX-DH-XXXX'}-###"></td>
       <td style="width:90px"><select data-field="tipo_muestra" style="width:100%">${tipos}</select></td>
       <td style="width:90px"><select data-field="tipo_control" style="width:100%">${ctrls}</select></td>
       <td style="width:172px"><input data-field="n_padre" style="width:100%"></td>
       <td style="width:56px"><select data-field="ctrl_gran" style="width:100%"><option>N</option><option>Y</option></select></td>
       <td style="width:130px"><input data-field="fecha" type="date" style="width:100%"></td>
       <td style="width:65px"><input data-field="peso" type="number" step="0.1" style="width:100%"></td>
-      <td><input data-field="comentarios" value="${p.note}" style="width:100px"></td>
+      <td><input data-field="comentarios" value="${p.note||''}" style="width:100%;min-width:100px"></td>
       <td><button class="btn btn-danger btn-sm" onclick="delRow(this,'muest')">✕</button></td>`;
     newTr.querySelector('[data-field=tipo_muestra]').value=p.tipo_muestra;
     const ctrlSel=newTr.querySelector('[data-field=tipo_control]');
@@ -1864,27 +1979,27 @@ function calcQaqcRecommendations(){
   const priRows=rows.filter(r=>r.tipo_muestra==='PRI');
   const n=priRows.length;
   if(n===0){document.getElementById('qaqc-panel').style.display='none';return;}
-  // Criteria percentages
+  const crmTotal=Math.max(1,Math.round(n*0.05));
   const criteria=[
-    {label:'CBK (5%)',type:'CBK',pct:5},
-    {label:'BAY01-19 CRM bajo (5%)',type:'BAY01-19',pct:5},
-    {label:'BAY02-19 CRM medio (5%)',type:'BAY02-19',pct:5},
-    {label:'BAY03-19 CRM alto (5%)',type:'BAY03-19',pct:5},
-    {label:'PDS-dup pulpa (5%)',type:'PDS',pct:5},
-    {label:'CDP-dup prep (2.5%)',type:'CDP',pct:2.5},
-    {label:'TWS-twin (2.5%)',type:'TWS',pct:2.5},
-    {label:'SEC (5%)',type:'SEC',pct:5},
+    {label:'CBK (5%)',   type:'CBK',     pct:5,  single:true},
+    {label:'CRM total (5%)', type:'CRM', pct:5,  single:false, crmGroup:true},
+    {label:'PDS (5%)',   type:'PDS',     pct:5,  single:true},
+    {label:'CDP (2.5%)', type:'CDP',     pct:2.5,single:true},
+    {label:'TWS (2.5%)', type:'TWS',     pct:2.5,single:true},
   ];
-  // Count current insertions
-  const counts={};
+  const counts={CBK:0,CRM:0,PDS:0,CDP:0,TWS:0};
   rows.forEach(r=>{
-    const key=r.tipo_control||r.tipo_muestra;
-    counts[key]=(counts[key]||0)+1;
+    if(r.tipo_muestra==='Control'){
+      if(r.tipo_control==='CBK')counts.CBK++;
+      if(r.tipo_control==='BAY01-19'||r.tipo_control==='BAY02-19'||r.tipo_control==='BAY03-19')counts.CRM++;
+    }
+    if(r.tipo_muestra==='PDS')counts.PDS++;
+    if(r.tipo_muestra==='CDP')counts.CDP++;
+    if(r.tipo_muestra==='TWS')counts.TWS++;
   });
-  // Ctrl gran check: 5% of PRI, preferring length > 0.7
   const granNeeded=Math.max(1,Math.round(n*0.05));
   const granCurrent=rows.filter(r=>r.ctrl_gran==='Y').length;
-  const longPri=priRows.filter(r=>parseFloat(r.length||r.to-r.from||0)>0.7).length;
+  const longPri=priRows.filter(r=>parseFloat(r.length||0)>0.7).length;
   const panel=document.getElementById('qaqc-panel');
   const content=document.getElementById('qaqc-content');
   panel.style.display='';
@@ -1895,7 +2010,7 @@ function calcQaqcRecommendations(){
     const ok=current>=needed;
     html+=`<span style="background:${ok?'#dcfce7':'#fee2e2'};color:${ok?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:10px;font-weight:600">${label}: ${current}/${needed}</span>`;
   });
-  html+=`<span style="background:${granCurrent>=granNeeded?'#dcfce7':'#fef3c7'};color:${granCurrent>=granNeeded?'var(--green)':'var(--orange)'};padding:3px 8px;border-radius:10px;font-weight:600">Ctrl Gran (5%): ${granCurrent}/${granNeeded} <span style="font-weight:400;font-size:.75rem">(>0.7m disponibles: ${longPri})</span></span>`;
+  html+=`<span style="background:${granCurrent>=granNeeded?'#dcfce7':'#fef3c7'};color:${granCurrent>=granNeeded?'var(--green)':'var(--orange)'};padding:3px 8px;border-radius:10px;font-weight:600">Ctrl Gran (5%): ${granCurrent}/${granNeeded} <span style="font-weight:400;font-size:.75rem">(>0.7m: ${longPri})</span></span>`;
   content.innerHTML=html;
 }
 function saveMuestreo(){
@@ -1905,7 +2020,7 @@ function saveMuestreo(){
   const pri=rows.filter(r=>r.tipo_muestra==='PRI').length;
   const ctrl=rows.filter(r=>r.tipo_muestra==='Control').length;
   const dup=rows.filter(r=>r.tipo_muestra&&r.tipo_muestra!=='PRI'&&r.tipo_muestra!=='Control').length;
-  addLog(`Muestreo guardado: ${rows.length} muestras`);
+  _pendingUnsaved=false;addLog(`Muestreo guardado: ${rows.length} muestras`);
   toast(`💾 Muestreo guardado — Total: ${rows.length} | PRI: ${pri} | Controles: ${ctrl} | Duplicados: ${dup}`);
   calcQaqcRecommendations();
 }
@@ -2036,49 +2151,49 @@ function validateDesdeHasta(el){
   const hastaEl=tr.querySelector('[data-field=hasta_dens]');
   const from=parseFloat(fromEl?.value)||0;
   const to=parseFloat(toEl?.value)||0;
-  // Reset styles on all four fields
+  // Reset styles
   [desdeEl,hastaEl].forEach(e=>{
-    if(e){e.style.background='';e.style.color='';e.title='';}
+    if(e){e.style.background='';e.style.color='';e.style.outline='';e.title='';}
   });
   if(!from&&!to)return;
-  // ── Validate & clamp Desde Dens ──
+  // ── Alert Desde Dens if out of From..To ──
   if(desdeEl&&desdeEl.value!==''){
-    let val=parseFloat(desdeEl.value);
-    if(isNaN(val))return;
-    if(val<from){
-      // Clamp to From
-      desdeEl.value=from.toFixed(2);
-      desdeEl.style.background='#fef3c7';
-      desdeEl.style.color='var(--orange)';
-      desdeEl.title=`Ajustado al mínimo From (${from})`;
-    } else if(val>to){
-      // Clamp to To
-      desdeEl.value=to.toFixed(2);
-      desdeEl.style.background='#fef3c7';
-      desdeEl.style.color='var(--orange)';
-      desdeEl.title=`Ajustado al máximo To (${to})`;
+    const val=parseFloat(desdeEl.value);
+    if(!isNaN(val)){
+      if(val<from){
+        desdeEl.style.background='#fee2e2';
+        desdeEl.style.color='var(--red)';
+        desdeEl.style.outline='2px solid var(--red)';
+        desdeEl.title=`Desde Dens (${val}) < From (${from}) — debe estar dentro del intervalo`;
+      } else if(val>to){
+        desdeEl.style.background='#fee2e2';
+        desdeEl.style.color='var(--red)';
+        desdeEl.style.outline='2px solid var(--red)';
+        desdeEl.title=`Desde Dens (${val}) > To (${to}) — debe estar dentro del intervalo`;
+      }
     }
   }
-  // ── Validate & clamp Hasta Dens ──
+  // ── Alert Hasta Dens if out of From..To or < Desde ──
   if(hastaEl&&hastaEl.value!==''){
-    const desde=parseFloat(desdeEl?.value)||from;
-    let val=parseFloat(hastaEl.value);
-    if(isNaN(val))return;
-    if(val<from){
-      hastaEl.value=from.toFixed(2);
-      hastaEl.style.background='#fef3c7';
-      hastaEl.style.color='var(--orange)';
-      hastaEl.title=`Ajustado al mínimo From (${from})`;
-    } else if(val>to){
-      hastaEl.value=to.toFixed(2);
-      hastaEl.style.background='#fef3c7';
-      hastaEl.style.color='var(--orange)';
-      hastaEl.title=`Ajustado al máximo To (${to})`;
-    } else if(val<desde){
-      // Hasta < Desde — warn but don't clamp (user may still be typing)
-      hastaEl.style.background='#fee2e2';
-      hastaEl.style.color='var(--red)';
-      hastaEl.title=`Hasta Dens (${val}) < Desde Dens (${desde})`;
+    const val=parseFloat(hastaEl.value);
+    const desde=desdeEl?.value!==''?parseFloat(desdeEl.value):from;
+    if(!isNaN(val)){
+      if(val<from){
+        hastaEl.style.background='#fee2e2';
+        hastaEl.style.color='var(--red)';
+        hastaEl.style.outline='2px solid var(--red)';
+        hastaEl.title=`Hasta Dens (${val}) < From (${from}) — debe estar dentro del intervalo`;
+      } else if(val>to){
+        hastaEl.style.background='#fee2e2';
+        hastaEl.style.color='var(--red)';
+        hastaEl.style.outline='2px solid var(--red)';
+        hastaEl.title=`Hasta Dens (${val}) > To (${to}) — debe estar dentro del intervalo`;
+      } else if(!isNaN(desde)&&val<desde){
+        hastaEl.style.background='#fef3c7';
+        hastaEl.style.color='var(--orange)';
+        hastaEl.style.outline='2px solid var(--orange)';
+        hastaEl.title=`Hasta Dens (${val}) < Desde Dens (${desde})`;
+      }
     }
   }
 }
@@ -2110,7 +2225,7 @@ function saveDensidad(){
   const dens=rows.filter(r=>r.tipo==='DENS').length;
   const repe=rows.filter(r=>r.tipo==='REPE').length;
   const chk=rows.filter(r=>r.tipo==='CHECK').length;
-  addLog(`Densidad guardada: ${total} muestras`);
+  _pendingUnsaved=false;addLog(`Densidad guardada: ${total} muestras`);
   toast(`💾 Densidad guardada — Total: ${total} | DENS: ${dens} | REPE: ${repe} | CHECK: ${chk}`);
 }
 
@@ -2458,13 +2573,109 @@ function buildOzLegend(){
 // ═══════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════
+// Tabs that have data tables (need save-check)
+const DATA_TABS=['header','marcacion','geologia','densidad','muestreo'];
+let _currentTab='header';
+let _pendingUnsaved=false;
+
+// Mark current tab as having unsaved changes (called on any edit)
+function markUnsaved(){_pendingUnsaved=true;}
+
+// Validate missing critical fields before leaving a tab
+function validateTabBeforeLeave(tab){
+  const issues=[];
+  if(tab==='header'){
+    // Profundidad: value '0' is falsy but valid; check empty string
+    const profEl=document.getElementById('h-profundidad');
+    const pf=profEl?.value;
+    if(pf===''||pf===null||pf===undefined)issues.push('Profundidad Final no ingresada');
+    if(!document.getElementById('h-fecha-inicio')?.value)issues.push('Fecha de Inicio no ingresada');
+    if(!document.getElementById('h-id')?.value)issues.push('Código de sondaje vacío');
+  }
+  if(tab==='marcacion'){
+    const rows=_readRawRows('marc');
+    if(!rows.length)issues.push('Sin filas de marcación');
+    rows.forEach((r,i)=>{
+      if(r.to===''||r.to===null)issues.push(`Fila ${i+1}: campo To vacío`);
+      if(r.rec_m===''&&r.rec_geo==='')issues.push(`Fila ${i+1}: Rec m y Rec Geo vacíos`);
+    });
+  }
+  if(tab==='geologia'){
+    const rows=_readRawRows('geo');
+    if(!rows.length)issues.push('Sin filas de geología');
+    rows.forEach((r,i)=>{
+      if(r.to===''||r.to===null)issues.push(`Fila ${i+1}: campo To vacío`);
+      if(!r.lito1)issues.push(`Fila ${i+1}: Lito 1 vacío`);
+      if(!r.ore_zone)issues.push(`Fila ${i+1}: Ore Zone vacío`);
+    });
+  }
+  if(tab==='muestreo'){
+    const rows=readMuestData();
+    const pri=rows.filter(r=>r.tipo_muestra==='PRI');
+    if(!pri.length)issues.push('Sin muestras PRI');
+    rows.forEach((r,i)=>{
+      if(r.tipo_muestra==='PRI'&&(r.from===''||r.to===''))
+        issues.push(`Fila ${i+1}: From/To vacío`);
+      if(!r.n_muestra)issues.push(`Fila ${i+1}: N° Muestra sin asignar`);
+    });
+  }
+  if(tab==='densidad'){
+    const rows=_readRawRows('dens');
+    rows.forEach((r,i)=>{
+      const ph=parseFloat(r.p_hum),ps=parseFloat(r.p_seco);
+      if(ph>0&&ps>0&&ph<ps)issues.push(`Fila ${i+1}: P.Húm < P.Seco`);
+      const desdeV=parseFloat(r.desde_dens),hastaV=parseFloat(r.hasta_dens);
+      const fromV=parseFloat(r.from),toV=parseFloat(r.to);
+      if(!isNaN(desdeV)&&!isNaN(fromV)&&desdeV<fromV)
+        issues.push(`Fila ${i+1}: Desde Dens fuera del intervalo`);
+      if(!isNaN(hastaV)&&!isNaN(toV)&&hastaV>toV)
+        issues.push(`Fila ${i+1}: Hasta Dens fuera del intervalo`);
+    });
+  }
+  return issues;
+}
+
 function switchTab(name){
+  if(name===_currentTab)return;
+  if(DATA_TABS.includes(_currentTab)&&currentHoleId){
+    const issues=validateTabBeforeLeave(_currentTab);
+    // Show save prompt if unsaved changes, or if there are issues regardless
+    if(_pendingUnsaved||issues.length){
+      let msg=`Pestaña: ${_currentTab.toUpperCase()}`;
+      if(issues.length){
+        // Limit to first 5 issues for readability
+        const shown=issues.slice(0,5);
+        const extra=issues.length>5?`\n  … y ${issues.length-5} más`:'';
+        msg+=`\n\nDatos faltantes o errores:\n• ${shown.join('\n• ')}${extra}`;
+      }
+      if(_pendingUnsaved){
+        msg+='\n\n¿Guardar antes de continuar?';
+        const choice=confirm(msg);
+        if(choice){
+          if(_currentTab==='header')saveHeader();
+          else if(_currentTab==='marcacion')saveMarcacion();
+          else if(_currentTab==='geologia')saveGeologia();
+          else if(_currentTab==='muestreo')saveMuestreo();
+          else if(_currentTab==='densidad')saveDensidad();
+        }
+      } else if(issues.length){
+        // Only issues, no unsaved — just notify
+        alert(msg+'\n\nRevisar antes de continuar.');
+      }
+      _pendingUnsaved=false;
+    }
+  }
+  _currentTab=name;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+name));
   if(name==='log')renderLog();
   if(name==='admin')renderAdmin();
   if(name==='muestreo')calcQaqcRecommendations();
 }
+
+// Wire markUnsaved to all table inputs/selects (called from oninput/onchange in rows)
+function _muDirty(){_pendingUnsaved=true;}
+
 function closeModal(id){
   const el=document.getElementById(id);
   if(!el)return;
@@ -2718,9 +2929,9 @@ async function doRecoverFromSheets(){
       diametro:h.diametro||h['Diametro']||'',
       ubicacion:h.ubicacion||h['Ubicacion']||'',
       plataforma:h.plataforma||h['Plataforma']||'',
-      azimuth:h.azimuth||h['Azimuth (deg)']||'',
-      dip:h.dip||h['Dip (deg)']||'',
-      profundidad:h.profundidad||h['Profundidad Final (m)']||0,
+      azimuth:h.azimuth??h['Azimuth (deg)']??'',
+      dip:h.dip??h['Dip (deg)']??'',
+      profundidad:h.profundidad??h['Profundidad Final (m)']??0,
       completed:h.completed||h['Is Completed']||'N',
       geologo:h.geologo||h['Geologo']||'',
       tecnico:h.tecnico||h['Tecnico']||'',
@@ -2730,22 +2941,22 @@ async function doRecoverFromSheets(){
       fecha_inicio:h.fecha_inicio||h['Fecha Inicio']||'',
       fecha_fin:h.fecha_fin||h['Fecha Fin']||'',
       fecha_ingreso:h.fecha_ingreso||h['Fecha Ingreso']||'',
-      cajas:h.cajas||h['Cajas Core']||'',
+      cajas:h.cajas??h['Cajas Core']??'',
       tipo_coord:h.tipo_coord||h['Tipo Coord']||'',
       datum:h.datum||h['Datum']||'',
-      norte:h.norte||h['Norte (m)']||'',
-      este:h.este||h['Este (m)']||'',
-      elevacion:h.elevacion||h['Elevacion (msnm)']||'',
+      norte:h.norte??h['Norte (m)']??'',
+      este:h.este??h['Este (m)']??'',
+      elevacion:h.elevacion??h['Elevacion (msnm)']??'',
       metodo_topo:h.metodo_topo||h['Metodo Topografico']||'',
       comentarios:h.comentarios||h['Comentarios']||'',
     },
     marcacion: (hole.marcacion||[]).map(r=>({
-      from:r['From (m)']||r.from||'', to:r['To (m)']||r.to||'',
-      rec_m:r['Rec m']||r.rec_m||'', rec_geo:r['Rec Geo m']||r.rec_geo||'',
-      comentarios:r['Comentarios']||r.comentarios||''
+      from:r['From (m)']??r.from??'', to:r['To (m)']??r.to??'',
+      rec_m:r['Rec m']??r.rec_m??'', rec_geo:r['Rec Geo m']??r.rec_geo??'',
+      comentarios:r['Comentarios']??r.comentarios??''
     })),
     geologia: (hole.geologia||[]).map(r=>({
-      from:r['From']||r.from||'', to:r['To']||r.to||'',
+      from:r['From']??r.from??'', to:r['To']??r.to??'',
       ore_zone:r['Ore Zone']||r.ore_zone||'', lito1:r['Lito 1']||r.lito1||'',
       color:r['Color']||r.color||'', intensidad:r['Intensidad']||r.intensidad||'',
       contacto:r['Contacto']||r.contacto||'', granulometria:r['Granulometria']||r.granulometria||'',
@@ -2754,28 +2965,29 @@ async function doRecoverFromSheets(){
     })),
     muestreo: (hole.muestreo||[]).map(r=>({
       ore_zone:r['Ore Zone']||r.ore_zone||'',
-      from:r['From']||r.from||'', to:r['To']||r.to||'',
+      lito1:r['Lito 1']||r.lito1||'',
+      from:r['From']??r.from??'', to:r['To']??r.to??'',
       n_muestra:r['N Muestra']||r.n_muestra||'',
       tipo_muestra:r['Tipo Muestra']||r.tipo_muestra||'',
       tipo_control:r['Tipo Control']||r.tipo_control||'—',
       n_padre:r['N Muestra Padre']||r.n_padre||'',
       ctrl_gran:r['Ctrl Gran']||r.ctrl_gran||'N',
       fecha:r['Fecha Muestreo']||r.fecha||'',
-      peso:r['Peso (g)']||r.peso||'',
+      peso:r['Peso (g)']??r.peso??'',
       comentarios:r['Comentarios']||r.comentarios||''
     })),
     densidad: (hole.densidad||[]).map(r=>({
-      from:r['From']||r.from||'', to:r['To']||r.to||'',
-      desde_dens:r['Desde Dens']||r.desde_dens||'',
-      hasta_dens:r['Hasta Dens']||r.hasta_dens||'',
+      from:r['From']??r.from??'', to:r['To']??r.to??'',
+      desde_dens:r['Desde Dens']??r.desde_dens??'',
+      hasta_dens:r['Hasta Dens']??r.hasta_dens??'',
       n_muestra:r['N Muestra']||r.n_muestra||'',
       tipo:r['Tipo']||r.tipo||'DENS',
       fecha:r['Fecha']||r.fecha||'',
-      p_hum:r['P Hum (g)']||r.p_hum||'', p_seco:r['P Seco (g)']||r.p_seco||'',
-      l1:r['L1']||r.l1||'', l2:r['L2']||r.l2||'',
-      l3:r['L3']||r.l3||'', l4:r['L4']||r.l4||'',
-      d1:r['D1']||r.d1||'', d2:r['D2']||r.d2||'',
-      d3:r['D3']||r.d3||'', d4:r['D4']||r.d4||''
+      p_hum:r['P Hum (g)']??r.p_hum??'', p_seco:r['P Seco (g)']??r.p_seco??'',
+      l1:r['L1']??r.l1??'', l2:r['L2']??r.l2??'',
+      l3:r['L3']??r.l3??'', l4:r['L4']??r.l4??'',
+      d1:r['D1']??r.d1??'', d2:r['D2']??r.d2??'',
+      d3:r['D3']??r.d3??'', d4:r['D4']??r.d4??''
     }))
   };
   saveHole(holeId, normalizedHole);
@@ -2783,6 +2995,12 @@ async function doRecoverFromSheets(){
   addLog(`Sondaje recuperado de Sheets: ${holeId}`, dev);
   closeModal('modal-recover');
   populateHoleSelector();
+  // Clear current tables to avoid duplicates, then load fresh
+  ['marc','geo','muest','dens'].forEach(p=>{
+    const tb=document.getElementById(p+'-tbody');
+    if(tb)tb.innerHTML='';
+  });
+  currentHoleId=null; // force loadHole to not autoSave
   loadHole(holeId);
   toast(`☁ Sondaje ${holeId} recuperado de Sheets`);
 }
